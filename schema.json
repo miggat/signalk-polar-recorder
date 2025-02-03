@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "sampleInterval": {
+      "type": "number",
+      "title": "Sampling Interval (ms)",
+      "description": "The interval at which to record data points.",
+      "default": 1000
+    },
+    "enableRecording": {
+      "type": "boolean",
+      "title": "Enable recording",
+      "description": "Toggle to enable or disable recording of polar data.",
+      "default": false
+    }
+  }
+}

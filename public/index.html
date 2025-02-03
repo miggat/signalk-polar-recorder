@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polar Data Viewer</title>
+    <script type="module" src="./scripts/main.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        #container {
+            max-width: 1000px;
+            height: 800px;
+            margin: 0 auto;
+        }
+
+        #updateTime {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Polar Data Viewer</h1>
+    <p id="updateTime">Updated at: --:--:--</p>
+
+    <!-- Polar Diagram Container -->
+    <div id="container"></div>
+
+    <!-- Live Data Display -->
+    <div id="liveData" style="text-align: center; font-size: 1.2em; margin-top: 10px;">
+        <span id="windAngle">Wind Angle: --°</span> |
+        <span id="windSpeed">Wind Speed: -- kt</span> |
+        <span id="boatSpeed">Boat Speed: -- kt</span>
+    </div>
+
+
+    <!-- Data Table -->
+    <table id="polarTable">
+        <thead></thead>
+        <tbody id="polarTableBody"></tbody>
+    </table>
+
+</body>
+
+</html>
