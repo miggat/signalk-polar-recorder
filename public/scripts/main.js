@@ -46,11 +46,12 @@ function initChart() {
             }
         },
         tooltip: {
-            shared: true,
+            shared: false,  // ✅ Ensure only the hovered point is shown
             formatter: function () {
-                return `${this.x}°: ${this.y.toFixed(2)} kt`;
+                const windSpeed = this.point.series.name.split(' ')[0]; // ✅ Extract TWS from series name
+                return `${this.x}° TWA / ${windSpeed} kt TWS: ${this.y.toFixed(2)} kt STW`;
             }
-        },
+        }        ,
         legend: {
             layout: 'vertical',
             align: 'right',
@@ -151,7 +152,8 @@ function updateChart(polarData) {
             pointPlacement: 'on',
             color: colors[index % colors.length],  // Ensure color cycling
             connectEnds: true,
-            connectNulls: true
+            connectNulls: true,
+            visible: windSpeed < 40
         });
     });
 
