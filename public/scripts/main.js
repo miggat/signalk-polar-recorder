@@ -22,12 +22,12 @@ function initChart() {
         },
         pane: {
             size: '100%',
-            startAngle: 0,
+            startAngle: -180, // ✅ Extend pane to cover full range
             endAngle: 180
         },
         xAxis: {
             tickInterval: 15,
-            min: 0,
+            min: -180,  // ✅ Extend X-axis for mirroring
             max: 180,
             labels: {
                 formatter: function () {
@@ -36,7 +36,7 @@ function initChart() {
             }
         },
         yAxis: {
-            gridLineInterpolation: 'polygon',
+            gridLineInterpolation: 'circle',
             lineWidth: 0,
             min: 0,
             max: 14,
@@ -51,7 +51,7 @@ function initChart() {
                 const windSpeed = this.point.series.name.split(' ')[0]; // ✅ Extract TWS from series name
                 return `${this.x}° TWA / ${windSpeed} kt TWS: ${this.y.toFixed(2)} kt STW`;
             }
-        }        ,
+        },
         legend: {
             layout: 'vertical',
             align: 'right',
@@ -75,6 +75,7 @@ function initChart() {
         ]
     });
 }
+
 
 // Fetch and display polar data
 async function fetchPolarData() {
@@ -129,8 +130,6 @@ function generateTable(polarData) {
     });
 }
 
-
-
 function updateChart(polarData) {
     const seriesData = [];
 
@@ -139,18 +138,25 @@ function updateChart(polarData) {
     const windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
 
     windSpeeds.forEach((windSpeed, index) => {
-        const data = windAngles.map(angle => {
+        let data = windAngles.map(angle => {
             const boatSpeed = polarData[angle] && polarData[angle][windSpeed]
                 ? parseFloat(polarData[angle][windSpeed])
                 : null;
-            return [angle, boatSpeed];
-        });
+
+            return boatSpeed !== null ? [angle, boatSpeed] : null;
+        }).filter(point => point !== null); // Remove null values
+
+        // ✅ Append mirrored values in correct order (descending)
+        let mirroredData = data.map(([angle, speed]) => [-angle, speed]).reverse();
+
+        // ✅ Combine original and mirrored data in the correct order
+        data = [...data, ...mirroredData];
 
         seriesData.push({
             name: `${windSpeed} kt wind`,
             data: data,
             pointPlacement: 'on',
-            color: colors[index % colors.length],  // Ensure color cycling
+            color: colors[index % colors.length],  
             connectEnds: true,
             connectNulls: true,
             visible: windSpeed < 40
@@ -165,7 +171,6 @@ function updateChart(polarData) {
 
     chart.redraw();
 }
-
 
 // Update current performance point on the chart
 function updateLivePoint(angle, speed, windSpeed) {
