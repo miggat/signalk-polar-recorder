@@ -120,13 +120,13 @@ module.exports = function (app) {
       loadPolarData();
       cleanPolarData();
 
-      if (Object.keys(polarData).length === 0) {
-        function initializeSampleData() {
-          updatePolars(30 * (Math.PI / 180), 6 / 1.94384, 4.5);
-          console.log("Initialized sample data.");
-        }
-        initializeSampleData();
-      }
+      // if (Object.keys(polarData).length === 0) {
+      //   function initializeSampleData() {
+      //     updatePolars(30 * (Math.PI / 180), 6 / 1.94384, 4.5);
+      //     console.log("Initialized sample data.");
+      //   }
+      //   initializeSampleData();
+      // }
     },
     stop: function () {
       console.log("Polar Recorder plugin stopped");

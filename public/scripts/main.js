@@ -11,6 +11,9 @@ let reachAngle = 90;
 // Initialize chart instance
 let chart;
 
+// Store latest polar data globally
+let latestPolarData = {};
+
 function initChart() {
     chart = Highcharts.chart('container', {
         chart: {
@@ -18,7 +21,7 @@ function initChart() {
             type: 'line'
         },
         title: {
-            text: 'Polar Performance Chart'
+            text: ''
         },
         pane: {
             size: '100%',
@@ -77,14 +80,14 @@ function initChart() {
 }
 
 
-// Fetch and display polar data
+// Fetch and store polar data
 async function fetchPolarData() {
     try {
         const response = await fetch('/signalk/v1/api/signalk-polar-recorder/polar-data');
         if (response.ok) {
-            const data = await response.json();
-            generateTable(data);
-            updateChart(data);
+            latestPolarData = await response.json();
+            generateTable(latestPolarData);
+            updateChart(latestPolarData);
             updateTimestamp();
         } else {
             console.error('Failed to fetch polar data');
@@ -130,6 +133,32 @@ function generateTable(polarData) {
     });
 }
 
+function findClosestPolarPoint(windAngle, windSpeed, polarData) {
+    let closestTWA = null;
+    let closestTWS = null;
+    let expectedBoatSpeed = 0;
+    let minDistance = Infinity;
+
+    const windAngles = Object.keys(polarData).map(Number);
+    const windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))];
+
+    windAngles.forEach(twa => {
+        windSpeeds.forEach(tws => {
+            if (polarData[twa] && polarData[twa][tws] !== undefined) {
+                const distance = Math.sqrt(Math.pow(twa - windAngle, 2) + Math.pow(tws - windSpeed, 2));
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestTWA = twa;
+                    closestTWS = tws;
+                    expectedBoatSpeed = polarData[twa][tws];
+                }
+            }
+        });
+    });
+
+    return { closestTWA, closestTWS, expectedBoatSpeed };
+}
+
 function updateChart(polarData) {
     const seriesData = [];
 
@@ -172,17 +201,26 @@ function updateChart(polarData) {
     chart.redraw();
 }
 
-// Update current performance point on the chart
+// Update current performance point on the chart & Live Data
 function updateLivePoint(angle, speed, windSpeed) {
     const liveSeries = chart.series.find(s => s.name === 'Current Performance');
     if (liveSeries) {
         liveSeries.setData([[angle, speed]], true);
     }
 
-    // Update the live data display
+    // Find closest polar data
+    const { closestTWA, closestTWS, expectedBoatSpeed } = findClosestPolarPoint(angle, windSpeed, latestPolarData);
+
+    // Calculate differences
+    const absoluteDifference = (speed - expectedBoatSpeed).toFixed(2);
+    const percentageDifference = expectedBoatSpeed > 0 ? ((absoluteDifference / expectedBoatSpeed) * 100).toFixed(1) : "--";
+
+    // Update Live Data Display
     document.getElementById("windAngle").textContent = `Wind Angle: ${angle.toFixed(1)}°`;
     document.getElementById("windSpeed").textContent = `Wind Speed: ${windSpeed.toFixed(1)} kt`;
     document.getElementById("boatSpeed").textContent = `Boat Speed: ${speed.toFixed(1)} kt`;
+    document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA`;
+    document.getElementById("speedDifference").textContent = `Difference: ${absoluteDifference} kt (${percentageDifference}%)`;
 }
 
 async function fetchSignalKData() {
@@ -216,4 +254,19 @@ setInterval(fetchSignalKData, 1000);
 
 fetchPolarData();
 initChart();
-// setInterval(fetchPolarData, 5000);
+
+// Toggle table visibility
+document.addEventListener("DOMContentLoaded", function () {
+    const toggleTableBtn = document.getElementById("toggleTableBtn");
+    const polarTable = document.getElementById("polarTable");
+
+    toggleTableBtn.addEventListener("click", function () {
+        if (polarTable.style.display === "none") {
+            polarTable.style.display = "table";
+            toggleTableBtn.textContent = "Hide Table";
+        } else {
+            polarTable.style.display = "none";
+            toggleTableBtn.textContent = "Show Table";
+        }
+    });
+});
