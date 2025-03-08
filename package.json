@@ -13,6 +13,7 @@
     "configuration": "./config.json"
   },
   "dependencies": {
-    "highcharts": "^12.1.2"
+    "highcharts": "^12.1.2",
+    "csv-parse": "^5.0.0"
   }
 }

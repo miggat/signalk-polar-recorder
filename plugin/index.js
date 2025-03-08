@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const csvParse = require('csv-parse/sync');
 
 module.exports = function (app) {
   const plugin = {
@@ -7,6 +8,7 @@ module.exports = function (app) {
     name: 'SignalK Polar Recorder',
     description: 'A SignalK plugin to record boat polars based on sailing performance',
     schema: require('../schema.json'),
+
     start: function (options) {
       console.log("Polar Recorder plugin started");
 
@@ -33,101 +35,78 @@ module.exports = function (app) {
         }
       }
 
-      function roundToStep(value, step) {
-        if (isNaN(value)) return 0;
-        return Math.round(value / step) * step;
+      function isValidPolarData(data) {
+        return typeof data === 'object' && Object.keys(data).length > 0;
       }
 
-      function cleanPolarData() {
-        for (const windSpeedKey in polarData) {
-          if (isNaN(Number(windSpeedKey))) {
-            delete polarData[windSpeedKey];
-          } else {
-            const angleData = polarData[windSpeedKey];
-            for (const angleKey in angleData) {
-              if (isNaN(Number(angleKey))) {
-                delete angleData[angleKey];
-              }
+      function parseCSVToPolar(csvContent) {
+        try {
+          const records = csvParse.parse(csvContent, { delimiter: ';', columns: true });
+          const twaValues = Object.keys(records[0]).filter(key => key !== 'twa/tws').map(Number);
+
+          let polarJson = {};
+          records.forEach(row => {
+            const twa = parseFloat(row['twa/tws']);
+            if (!isNaN(twa)) {
+              polarJson[twa] = {};
+              twaValues.forEach(tws => {
+                const boatSpeed = parseFloat(row[tws]);
+                if (!isNaN(boatSpeed)) {
+                  polarJson[twa][tws] = boatSpeed;
+                }
+              });
             }
-          }
+          });
+
+          return polarJson;
+        } catch (error) {
+          console.error("Error parsing CSV:", error);
+          return null;
         }
-        savePolarData();
       }
 
-      function updatePolars(angle, windSpeed, boatSpeed) {
-        if (!options.enableRecording) return;
+      function handlePolarImport(content) {
+        let parsedData;
+        
+        try {
+          if (content.trim().startsWith('{')) {
+            // Assume it's JSON
+            parsedData = JSON.parse(content);
+          } else {
+            // Assume it's CSV
+            parsedData = parseCSVToPolar(content);
+          }
 
-        const angleInDegrees = angle * (180 / Math.PI);
-        const angleRounded = roundToStep(angleInDegrees, 5);
-
-        const windSpeedInKnots = windSpeed * 1.94384;
-        const windSpeedRounded = roundToStep(windSpeedInKnots, 2);
-
-        app.debug(`Attempting update: angle ${angleRounded}, wind ${windSpeedRounded}, speed ${boatSpeed}`);
-
-        if (!isNaN(angleRounded) && !isNaN(windSpeedRounded) && !isNaN(boatSpeed) &&
-          angleRounded >= 0 && angleRounded <= 180 &&
-          windSpeedRounded >= 0 && windSpeedRounded <= 100) {
-
-          const windSpeedKey = String(windSpeedRounded);
-          const angleKey = String(angleRounded);
-
-          if (!polarData[windSpeedKey]) polarData[windSpeedKey] = {};
-
-          const currentSpeed = polarData[windSpeedKey][angleKey];
-          if (!currentSpeed || boatSpeed > currentSpeed) {
-            polarData[windSpeedKey][angleKey] = boatSpeed;
+          if (isValidPolarData(parsedData)) {
+            polarData = parsedData;
             savePolarData();
-            app.debug(`Updated polar data at wind speed ${windSpeedRounded} kt, angle ${angleRounded}°: new boat speed ${boatSpeed} kt`);
+            return { success: true, message: "Polar data successfully imported and saved." };
           } else {
-            app.debug(`Skipped update: new boat speed ${boatSpeed} kt is not greater than current ${currentSpeed} kt at wind speed ${windSpeedRounded} kt, angle ${angleRounded}°`);
+            return { success: false, message: "Invalid polar data format." };
           }
-        } else {
-          app.debug("Invalid data for update; skipping.");
+        } catch (error) {
+          return { success: false, message: "Error processing polar data: " + error.message };
         }
       }
 
-      function handleData() {
-        const angleData = app.getSelfPath('environment.wind.angleTrueGround');
-        const windSpeedData = app.getSelfPath('environment.wind.speedOverGround');
-        const boatSpeedData = app.getSelfPath('navigation.speedThroughWater');
-
-        const angle = angleData && angleData.value;
-        const windSpeed = windSpeedData && windSpeedData.value;
-        const boatSpeed = boatSpeedData && boatSpeedData.value;
-
-        if (angle !== undefined && windSpeed !== undefined && boatSpeed !== undefined) {
-          app.debug("Received data - Angle:", angle, "Wind Speed:", windSpeed, "Boat Speed:", boatSpeed);
-
-          if (!isNaN(angle) && !isNaN(windSpeed) && !isNaN(boatSpeed)) {
-            updatePolars(angle, windSpeed, boatSpeed);
-          } else {
-            app.debug("Received NaN values; skipping update.");
-          }
+      // Handle import when settings are updated
+      if (options.importPolarData) {
+        console.log("Importing user-provided polar data...");
+        const result = handlePolarImport(options.importPolarData);
+        if (result.success) {
+          console.log("Polar data successfully imported via settings.");
         } else {
-          app.debug("Data not received for all required parameters.");
+          app.error("Polar data import failed:", result.message);
         }
       }
-
-      app.streambundle.getSelfStream('environment.wind.angleTrueGround').onValue(handleData);
-      app.streambundle.getSelfStream('environment.wind.speedOverGround').onValue(handleData);
-      app.streambundle.getSelfStream('navigation.speedThroughWater').onValue(handleData);
 
       app.get('/signalk/v1/api/signalk-polar-recorder/polar-data', (req, res) => {
         res.json(polarData);
       });
 
       loadPolarData();
-      cleanPolarData();
-
-      // if (Object.keys(polarData).length === 0) {
-      //   function initializeSampleData() {
-      //     updatePolars(30 * (Math.PI / 180), 6 / 1.94384, 4.5);
-      //     console.log("Initialized sample data.");
-      //   }
-      //   initializeSampleData();
-      // }
     },
+
     stop: function () {
       console.log("Polar Recorder plugin stopped");
     }

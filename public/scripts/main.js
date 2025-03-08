@@ -110,21 +110,29 @@ function generateTable(polarData) {
     const tableHeader = document.querySelector('#polarTable thead');
     const tableBody = document.querySelector('#polarTableBody');
 
-    // Extract wind angles (top-level keys) and wind speeds (nested keys)
-    const windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b);
-    const windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
+    // Extract wind angles (keys at top level) and wind speeds (nested keys)
+    let windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b);
+    let windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
 
-    let headerRow = '<tr><th>Wind Speed (kt)</th>';
-    windAngles.forEach(angle => {
-        headerRow += `<th>${angle}°</th>`;
+    // Remove TWA = 0
+    windAngles = windAngles.filter(angle => angle !== 0);
+
+    // Remove TWS = 0
+    windSpeeds = windSpeeds.filter(speed => speed !== 0);
+
+    // Create table header (TWS values as columns)
+    let headerRow = '<tr><th>TWA/TWS</th>';
+    windSpeeds.forEach(speed => {
+        headerRow += `<th>${speed} kt</th>`;
     });
     headerRow += '</tr>';
     tableHeader.innerHTML = headerRow;
 
+    // Create table body (TWA values as rows)
     tableBody.innerHTML = '';
-    windSpeeds.forEach(speed => {
-        let row = `<tr><td>${speed}</td>`;
-        windAngles.forEach(angle => {
+    windAngles.forEach(angle => {
+        let row = `<tr><td>${angle}°</td>`; // First column (TWA)
+        windSpeeds.forEach(speed => {
             const boatSpeed = polarData[angle] && polarData[angle][speed] ? polarData[angle][speed].toFixed(1) : '-';
             row += `<td>${boatSpeed}</td>`;
         });

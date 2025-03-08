@@ -12,6 +12,12 @@
       "title": "Enable recording",
       "description": "Toggle to enable or disable recording of polar data.",
       "default": false
+    },
+    "importPolarData": {
+      "type": "string",
+      "title": "Import Polar Data",
+      "description": "Paste polar data in JSON or CSV format. This will overwrite the existing polar data.",
+      "format": "textarea"
     }
   }
 }
