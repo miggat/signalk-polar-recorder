@@ -4,21 +4,52 @@ const colors = [
     '#CCFF00', '#FFFF00', '#FFCC00', '#FF9900', '#FF6600', '#FF3300', '#FF0000'
 ];
 
-// Define default values for tackAngle and reachAngle
 let tackAngle = 45;
 let reachAngle = 90;
-
-// Initialize chart instance
 let chart;
-
-// Store latest polar data globally
+let recording = false;
 let latestPolarData = {};
+let currentPolarObject = {};
+let polarFiles = [];
+
+function roundToNearest(value, step) {
+    return Math.round(value / step) * step;
+}
+
+function updateRecording(windAngle, windSpeed, boatSpeed) {
+    let twa = roundToNearest(windAngle, 5);
+    let tws = roundToNearest(windSpeed, 2);
+
+    twa = Math.abs(twa);
+
+    console.log(`TWA: ${twa}`);
+
+    if (!currentPolarObject[twa]) {
+        currentPolarObject[twa] = {};
+    }
+
+    if (!currentPolarObject[twa][tws]) {
+        currentPolarObject[twa][tws] = boatSpeed;
+    } else if (currentPolarObject[twa][tws] < boatSpeed) {
+        currentPolarObject[twa][tws] = boatSpeed;
+    }
+
+
+    updateChart(currentPolarObject);
+    generateTable(currentPolarObject);
+    updateTimestamp();
+}
+
 
 function initChart() {
     chart = Highcharts.chart('container', {
         chart: {
             polar: true,
-            type: 'line'
+            type: 'line',
+            animation: false
+        },
+        accessibility: {
+            enabled: false
         },
         title: {
             text: ''
@@ -81,12 +112,17 @@ function initChart() {
 
 
 // Fetch and store polar data
-async function fetchPolarData() {
+async function fetchPolarData(polarFile) {
+    console.log(`Fetching polar data for ${polarFile}`);
     try {
-        const response = await fetch('/signalk/v1/api/signalk-polar-recorder/polar-data');
+        // Construct the API URL with the polarFile query parameter
+        const url = `/signalk/v1/api/signalk-polar-recorder/polar-data${polarFile ? `?fileName=${encodeURIComponent(polarFile)}` : ''}`;
+
+        const response = await fetch(url);
         if (response.ok) {
             latestPolarData = await response.json();
-            generateTable(latestPolarData);
+            currentPolarObject = latestPolarData;
+            generateTable(currentPolarObject);
             updateChart(latestPolarData);
             updateTimestamp();
         } else {
@@ -94,6 +130,21 @@ async function fetchPolarData() {
         }
     } catch (error) {
         console.error('Error fetching polar data:', error);
+    }
+}
+
+async function fetchPolarFiles() {
+    try {
+        const response = await fetch('/signalk/v1/api/signalk-polar-recorder/get-polar-files');
+        if (response.ok) {
+            polarFiles = await response.json();
+            const select = document.getElementById('polarFileSelect');
+            select.innerHTML = polarFiles.map(file => `<option value="${file}">${file}</option>`).join('');
+        } else {
+            console.error('Failed to fetch polar files');
+        }
+    } catch (error) {
+        console.error('Error fetching polar files:', error);
     }
 }
 
@@ -193,7 +244,7 @@ function updateChart(polarData) {
             name: `${windSpeed} kt wind`,
             data: data,
             pointPlacement: 'on',
-            color: colors[index % colors.length],  
+            color: colors[index % colors.length],
             connectEnds: true,
             connectNulls: true,
             visible: windSpeed < 40
@@ -252,15 +303,39 @@ async function fetchSignalKData() {
 
         // Update the live chart point and display
         updateLivePoint(windAngleDeg, boatSpeedKnots, windSpeedKnots);
+
+        if (recording) {
+            updateRecording(windAngleDeg, windSpeedKnots, boatSpeedKnots);
+        }
     } catch (error) {
         console.error("Error fetching SignalK data:", error);
     }
+}
+
+
+function startRecording(mode) {
+    recording = true;
+    currentPolarObject = mode === 'incremental' ? currentPolarObject : {};
+    document.getElementById('recordControls').style.display = 'block';
+}
+
+function stopRecording(save) {
+    if (save) {
+        fetch('/save-polar-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentPolarObject)
+        }).then(() => fetchPolarData());
+    }
+    recording = false;
+    document.getElementById('recordControls').style.display = 'none';
 }
 
 // Poll SignalK data every second
 setInterval(fetchSignalKData, 1000);
 
 fetchPolarData();
+fetchPolarFiles();
 initChart();
 
 // Toggle table visibility
@@ -276,5 +351,22 @@ document.addEventListener("DOMContentLoaded", function () {
             polarTable.style.display = "none";
             toggleTableBtn.textContent = "Show Table";
         }
+    });
+});
+
+document.getElementById('recordPolarBtn').addEventListener('click', () => {
+    const mode = confirm("New Polar? Click OK. Incremental? Click Cancel.") ? 'new' : 'incremental';
+    startRecording(mode);
+});
+
+document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
+document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchPolarFiles().then(() => {
+        const select = document.getElementById('polarFileSelect');
+        select.addEventListener('change', (event) => {
+            fetchPolarData(event.target.value);
+        });
     });
 });

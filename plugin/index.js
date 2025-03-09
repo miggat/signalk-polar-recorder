@@ -13,18 +13,28 @@ module.exports = function (app) {
       console.log("Polar Recorder plugin started");
 
       const polarDataFilePath = path.join(app.getDataDirPath(), 'polar-data.json');
+      const polarRecordingsDir = path.join(app.getDataDirPath(), 'polar-recordings');
       let polarData = {};
 
-      function loadPolarData() {
-        if (fs.existsSync(polarDataFilePath)) {
+      function loadPolarData(fileName) {
+        let tempData;
+        let filePath = polarDataFilePath;
+        if (fileName) {
+          filePath = path.join(app.getDataDirPath(), fileName);
+        }
+
+        if (fs.existsSync(filePath)) {
           try {
-            polarData = JSON.parse(fs.readFileSync(polarDataFilePath, 'utf8'));
-            console.log("Loaded existing polar data:", polarData);
+            tempData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            console.log(`Loaded polar data from ${filePath}:`, polarData);
           } catch (err) {
-            app.error("Error loading polar data file:", err);
+            app.error(`Error loading polar data file (${filePath}):`, err);
           }
         }
+
+        return tempData;
       }
+
 
       function savePolarData() {
         try {
@@ -67,7 +77,7 @@ module.exports = function (app) {
 
       function handlePolarImport(content) {
         let parsedData;
-        
+
         try {
           if (content.trim().startsWith('{')) {
             // Assume it's JSON
@@ -89,6 +99,12 @@ module.exports = function (app) {
         }
       }
 
+      function ensureDirectoryExists(directory) {
+        if (!fs.existsSync(directory)) {
+          fs.mkdirSync(directory, { recursive: true });
+        }
+      }
+
       // Handle import when settings are updated
       if (options.importPolarData) {
         console.log("Importing user-provided polar data...");
@@ -101,10 +117,50 @@ module.exports = function (app) {
       }
 
       app.get('/signalk/v1/api/signalk-polar-recorder/polar-data', (req, res) => {
-        res.json(polarData);
+        const fileName = req.query.fileName; // Get fileName from query parameters
+        const data = loadPolarData(fileName); // Load data from the specified file
+    
+        if (data) {
+            res.json(data);
+        } else {
+            res.status(404).json({ error: "Polar data file not found or could not be loaded." });
+        }
+    });
+    
+
+      app.get('/signalk/v1/api/signalk-polar-recorder/get-polar-files', (req, res) => {
+        ensureDirectoryExists(polarRecordingsDir);
+
+        const files = [];
+        if (fs.existsSync(polarDataFilePath)) {
+          files.push(path.basename(polarDataFilePath));
+        }
+
+        if (fs.existsSync(polarRecordingsDir)) {
+          const recordingFiles = fs.readdirSync(polarRecordingsDir).map(file => `polar-recordings/${file}`);
+          files.push(...recordingFiles);
+        }
+
+        res.json(files);
       });
 
-      loadPolarData();
+      app.post('/save-polar-data', (req, res) => {
+        ensureDirectoryExists(polarRecordingsDir);
+        const timestamp = new Date().toISOString().replace(/[-:T]/g, '').split('.')[0];
+        const filename = `polar-${timestamp}.json`;
+        const filePath = path.join(polarRecordingsDir, filename);
+
+        try {
+          fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+          console.log(`Polar data saved to ${filePath}`);
+          res.json({ success: true, message: `Polar data saved as ${filename}` });
+        } catch (err) {
+          console.error("Error saving polar data:", err);
+          res.status(500).json({ success: false, message: "Error saving polar data" });
+        }
+      });
+
+      polarData = loadPolarData();
     },
 
     stop: function () {

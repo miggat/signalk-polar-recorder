@@ -8,99 +8,20 @@
     <script src="./libs/highcharts.js"></script>
     <script src="./libs/highcharts-more.js"></script>
     <script src="./libs/exporting.js"></script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: auto;
-            /* Enables scrolling when the table is shown */
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ccc;
-        }
-
-        th {
-            background-color: #f4f4f4;
-        }
-
-        /* Full-Screen Polar Chart */
-        #container {
-            width: 99vw;
-            height: 99vh;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Floating Header (Top-Left) */
-        #headerContainer {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            text-align: center;
-            font-size: 1.2em;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 8px;
-            border-radius: 5px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        /* Floating Live Data (Top-Right) */
-        #liveData {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            text-align: center;
-            font-size: 1.2em;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 8px;
-            border-radius: 5px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        /* Collapsible Table */
-        #tableContainer {
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        #polarTable {
-            display: none;
-            /* Table hidden by default */
-            margin: 0 auto;
-        }
-
-        #toggleTableBtn {
-            margin-top: 5px;
-            padding: 8px 12px;
-            font-size: 1em;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="./css/index.css">
 </head>
 
 <body>
-
-    <!-- Floating Header -->
     <div id="headerContainer">
-        <h1>Polar Data Viewer</h1>
+        <h2>Polar Data Viewer</h1>
         <p id="updateTime">Polar file updated at: --:--:--</p>
-        <button id="toggleTableBtn">Show Table</button>
+        <select id="polarFileSelect"></select>
+        <button id="recordPolarBtn">Record Polar</button>
+        <div id="recordControls">
+            <button id="stopSaveBtn">Stop & Save</button>
+            <button id="stopCancelBtn">Stop & Cancel</button>
+        </div>
     </div>
-
-    <!-- Floating Live Data -->
     <div id="liveData">
         <div>
             <span id="windAngle">Wind Angle: --°</span> |
@@ -112,19 +33,16 @@
             <span id="speedDifference">Difference: -- kt (--%)</span>
         </div>
     </div>
-
-
-    <!-- Full-Screen Polar Diagram -->
     <div id="container"></div>
-
-    <!-- Collapsible Data Table -->
+    <div id="toggleTableContainer">
+        <button id="toggleTableBtn">Show Table</button>
+    </div>
     <div id="tableContainer">
         <table id="polarTable" style="display: none;">
             <thead></thead>
             <tbody id="polarTableBody"></tbody>
         </table>
     </div>
-
     <script src="./scripts/main.js"></script>
 </body>
 
