@@ -1,5 +1,5 @@
 {
-  "name": "signalk-polar-recorder",
+  "name": "polar-recorder",
   "version": "1.0.0",
   "description": "A SignalK plugin to record boat polars based on sailing performance",
   "keywords": [

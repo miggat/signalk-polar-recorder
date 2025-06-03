@@ -1,128 +1,18 @@
-const colors = [
-    '#0000FF', '#0033FF', '#0066FF', '#0099FF', '#00CCFF', '#00FFFF',
-    '#00FFCC', '#00FF99', '#00FF66', '#00FF33', '#00FF00', '#99FF00',
-    '#CCFF00', '#FFFF00', '#FFCC00', '#FF9900', '#FF6600', '#FF3300', '#FF0000'
-];
+// main.js
+import { initChart, updateChart, updateLivePoint } from './chart.js';
 
-let tackAngle = 45;
-let reachAngle = 90;
-let chart;
-let recording = false;
+const API_BASE = '/signalk/v1/api/polar-recorder';
+
 let latestPolarData = {};
-let currentPolarObject = {};
 let polarFiles = [];
 
-function roundToNearest(value, step) {
-    return Math.round(value / step) * step;
-}
-
-function updateRecording(windAngle, windSpeed, boatSpeed) {
-    let twa = roundToNearest(windAngle, 5);
-    let tws = roundToNearest(windSpeed, 2);
-
-    twa = Math.abs(twa);
-
-    console.log(`TWA: ${twa}`);
-
-    if (!currentPolarObject[twa]) {
-        currentPolarObject[twa] = {};
-    }
-
-    if (!currentPolarObject[twa][tws]) {
-        currentPolarObject[twa][tws] = boatSpeed;
-    } else if (currentPolarObject[twa][tws] < boatSpeed) {
-        currentPolarObject[twa][tws] = boatSpeed;
-    }
-
-
-    updateChart(currentPolarObject);
-    generateTable(currentPolarObject);
-    updateTimestamp();
-}
-
-
-function initChart() {
-    chart = Highcharts.chart('container', {
-        chart: {
-            polar: true,
-            type: 'line',
-            animation: false
-        },
-        accessibility: {
-            enabled: false
-        },
-        title: {
-            text: ''
-        },
-        pane: {
-            size: '100%',
-            startAngle: -180, // ✅ Extend pane to cover full range
-            endAngle: 180
-        },
-        xAxis: {
-            tickInterval: 15,
-            min: -180,  // ✅ Extend X-axis for mirroring
-            max: 180,
-            labels: {
-                formatter: function () {
-                    return this.value + '°';
-                }
-            }
-        },
-        yAxis: {
-            gridLineInterpolation: 'circle',
-            lineWidth: 0,
-            min: 0,
-            max: 14,
-            tickInterval: 2,
-            title: {
-                text: 'Boat Speed (kt)'
-            }
-        },
-        tooltip: {
-            shared: false,  // ✅ Ensure only the hovered point is shown
-            formatter: function () {
-                const windSpeed = this.point.series.name.split(' ')[0]; // ✅ Extract TWS from series name
-                return `${this.x}° TWA / ${windSpeed} kt TWS: ${this.y.toFixed(2)} kt STW`;
-            }
-        },
-        legend: {
-            layout: 'vertical',
-            align: 'right',
-            verticalAlign: 'middle',
-            itemMarginTop: 5,
-            itemMarginBottom: 5
-        },
-        series: [
-            // Add series for current performance point
-            {
-                name: 'Current Performance',
-                type: 'scatter',
-                color: 'black',
-                marker: {
-                    radius: 5,
-                    symbol: 'circle'
-                },
-                data: [[0, 0]], // Initial placeholder
-                enableMouseTracking: false
-            }
-        ]
-    });
-}
-
-
-// Fetch and store polar data
 async function fetchPolarData(polarFile) {
-    console.log(`Fetching polar data for ${polarFile}`);
     try {
-        // Construct the API URL with the polarFile query parameter
-        const url = `/signalk/v1/api/signalk-polar-recorder/polar-data${polarFile ? `?fileName=${encodeURIComponent(polarFile)}` : ''}`;
-
+        const url = `${API_BASE}/polar-data${polarFile ? `?fileName=${encodeURIComponent(polarFile)}` : ''}`;
         const response = await fetch(url);
         if (response.ok) {
             latestPolarData = await response.json();
-            currentPolarObject = latestPolarData;
-            generateTable(currentPolarObject);
+            generateTable(latestPolarData);
             updateChart(latestPolarData);
             updateTimestamp();
         } else {
@@ -135,11 +25,14 @@ async function fetchPolarData(polarFile) {
 
 async function fetchPolarFiles() {
     try {
-        const response = await fetch('/signalk/v1/api/signalk-polar-recorder/get-polar-files');
+        const response = await fetch(`${API_BASE}/get-polar-files`);
         if (response.ok) {
             polarFiles = await response.json();
             const select = document.getElementById('polarFileSelect');
             select.innerHTML = polarFiles.map(file => `<option value="${file}">${file}</option>`).join('');
+            if (polarFiles.length > 0) {
+                await fetchPolarData(polarFiles[0]);
+            }
         } else {
             console.error('Failed to fetch polar files');
         }
@@ -148,51 +41,32 @@ async function fetchPolarFiles() {
     }
 }
 
-// Update timestamp display
 function updateTimestamp() {
-    const updateTimeElement = document.getElementById('updateTime');
     const now = new Date();
-    const formattedTime = now.toLocaleTimeString();
-    updateTimeElement.textContent = `Updated at: ${formattedTime}`;
+    document.getElementById('updateTime').textContent = `Updated at: ${now.toLocaleTimeString()}`;
 }
 
-// Generate data table for polar data
 function generateTable(polarData) {
     const tableHeader = document.querySelector('#polarTable thead');
     const tableBody = document.querySelector('#polarTableBody');
 
-    // Extract wind angles (keys at top level) and wind speeds (nested keys)
-    let windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b);
-    let windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
+    let windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b).filter(a => a !== 0);
+    let windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b).filter(s => s !== 0);
 
-    // Remove TWA = 0
-    windAngles = windAngles.filter(angle => angle !== 0);
-
-    // Remove TWS = 0
-    windSpeeds = windSpeeds.filter(speed => speed !== 0);
-
-    // Create table header (TWS values as columns)
-    let headerRow = '<tr><th>TWA/TWS</th>';
-    windSpeeds.forEach(speed => {
-        headerRow += `<th>${speed} kt</th>`;
-    });
-    headerRow += '</tr>';
+    let headerRow = '<tr><th>TWA/TWS</th>' + windSpeeds.map(s => `<th>${s} kt</th>`).join('') + '</tr>';
     tableHeader.innerHTML = headerRow;
 
-    // Create table body (TWA values as rows)
-    tableBody.innerHTML = '';
-    windAngles.forEach(angle => {
-        let row = `<tr><td>${angle}°</td>`; // First column (TWA)
+    tableBody.innerHTML = windAngles.map(angle => {
+        let row = `<tr><td>${angle}°</td>`;
         windSpeeds.forEach(speed => {
-            const boatSpeed = polarData[angle] && polarData[angle][speed] ? polarData[angle][speed].toFixed(1) : '-';
-            row += `<td>${boatSpeed}</td>`;
+            const boatSpeed = polarData[angle]?.[speed];
+            row += `<td>${boatSpeed != null ? boatSpeed.toFixed(1) : '-'}</td>`;
         });
-        row += '</tr>';
-        tableBody.innerHTML += row;
-    });
+        return row + '</tr>';
+    }).join('');
 }
 
-function findClosestPolarPoint(windAngle, windSpeed, polarData) {
+function findClosestPolarPoint(twa, tws, polarData) {
     let closestTWA = null;
     let closestTWS = null;
     let expectedBoatSpeed = 0;
@@ -201,15 +75,15 @@ function findClosestPolarPoint(windAngle, windSpeed, polarData) {
     const windAngles = Object.keys(polarData).map(Number);
     const windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))];
 
-    windAngles.forEach(twa => {
-        windSpeeds.forEach(tws => {
-            if (polarData[twa] && polarData[twa][tws] !== undefined) {
-                const distance = Math.sqrt(Math.pow(twa - windAngle, 2) + Math.pow(tws - windSpeed, 2));
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestTWA = twa;
-                    closestTWS = tws;
-                    expectedBoatSpeed = polarData[twa][tws];
+    windAngles.forEach(angle => {
+        windSpeeds.forEach(speed => {
+            if (polarData[angle]?.[speed] != null) {
+                const dist = Math.sqrt((angle - twa) ** 2 + (speed - tws) ** 2);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestTWA = angle;
+                    closestTWS = speed;
+                    expectedBoatSpeed = polarData[angle][speed];
                 }
             }
         });
@@ -218,151 +92,120 @@ function findClosestPolarPoint(windAngle, windSpeed, polarData) {
     return { closestTWA, closestTWS, expectedBoatSpeed };
 }
 
-function updateChart(polarData) {
-    const seriesData = [];
-
-    // Extract wind angles and wind speeds dynamically
-    const windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b);
-    const windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
-
-    windSpeeds.forEach((windSpeed, index) => {
-        let data = windAngles.map(angle => {
-            const boatSpeed = polarData[angle] && polarData[angle][windSpeed]
-                ? parseFloat(polarData[angle][windSpeed])
-                : null;
-
-            return boatSpeed !== null ? [angle, boatSpeed] : null;
-        }).filter(point => point !== null); // Remove null values
-
-        // ✅ Append mirrored values in correct order (descending)
-        let mirroredData = data.map(([angle, speed]) => [-angle, speed]).reverse();
-
-        // ✅ Combine original and mirrored data in the correct order
-        data = [...data, ...mirroredData];
-
-        seriesData.push({
-            name: `${windSpeed} kt wind`,
-            data: data,
-            pointPlacement: 'on',
-            color: colors[index % colors.length],
-            connectEnds: true,
-            connectNulls: true,
-            visible: windSpeed < 40
-        });
-    });
-
-    // Remove existing series (except the first one)
-    chart.series.slice(1).forEach(s => s.remove(false));
-
-    // Add updated series
-    seriesData.forEach(s => chart.addSeries(s, false));
-
-    chart.redraw();
-}
-
-// Update current performance point on the chart & Live Data
-function updateLivePoint(angle, speed, windSpeed) {
-    const liveSeries = chart.series.find(s => s.name === 'Current Performance');
-    if (liveSeries) {
-        liveSeries.setData([[angle, speed]], true);
-    }
-
-    // Find closest polar data
-    const { closestTWA, closestTWS, expectedBoatSpeed } = findClosestPolarPoint(angle, windSpeed, latestPolarData);
-
-    // Calculate differences
-    const absoluteDifference = (speed - expectedBoatSpeed).toFixed(2);
-    const percentageDifference = expectedBoatSpeed > 0 ? ((absoluteDifference / expectedBoatSpeed) * 100).toFixed(1) : "--";
-
-    // Update Live Data Display
-    document.getElementById("windAngle").textContent = `Wind Angle: ${angle.toFixed(1)}°`;
-    document.getElementById("windSpeed").textContent = `Wind Speed: ${windSpeed.toFixed(1)} kt`;
-    document.getElementById("boatSpeed").textContent = `Boat Speed: ${speed.toFixed(1)} kt`;
-    document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA`;
-    document.getElementById("speedDifference").textContent = `Difference: ${absoluteDifference} kt (${percentageDifference}%)`;
-}
-
-async function fetchSignalKData() {
+async function fetchLivePerformance() {
     try {
-        const response = await fetch('/signalk/v1/api/vessels/self');
-        if (!response.ok) {
-            throw new Error('Failed to fetch SignalK data');
-        }
+        const response = await fetch(`${API_BASE}/live-data`);
+        if (!response.ok) throw new Error('Failed to fetch live performance data');
 
         const data = await response.json();
+        const twa = parseFloat(data.twa);
+        const tws = parseFloat(data.tws);
+        const stw = parseFloat(data.stw);
 
-        // Extract wind angle, wind speed, and boat speed from SignalK paths
-        const windAngle = data.environment?.wind?.angleTrueGround?.value || 0;
-        const windSpeed = data.environment?.wind?.speedOverGround?.value || 0;
-        const boatSpeed = data.navigation?.speedThroughWater?.value || 0;
+        updateLivePoint(twa, stw);
 
-        // Convert values where necessary
-        const windAngleDeg = (windAngle * 180) / Math.PI; // Convert radians to degrees
-        const windSpeedKnots = windSpeed * 1.94384; // Convert m/s to knots
-        const boatSpeedKnots = boatSpeed * 1.94384;
+        document.getElementById("windAngle").textContent = `Wind Angle: ${twa}°`;
+        document.getElementById("windSpeed").textContent = `Wind Speed: ${tws} kt`;
+        document.getElementById("boatSpeed").textContent = `Boat Speed: ${stw} kt`;
 
-        // Update the live chart point and display
-        updateLivePoint(windAngleDeg, boatSpeedKnots, windSpeedKnots);
+        if (Object.keys(latestPolarData).length > 0) {
+            const { closestTWA, closestTWS, expectedBoatSpeed } = findClosestPolarPoint(twa, tws, latestPolarData);
+            const delta = (stw - expectedBoatSpeed).toFixed(2);
+            const deltaPct = expectedBoatSpeed > 0 ? ((delta / expectedBoatSpeed) * 100).toFixed(1) : "--";
 
-        if (recording) {
-            updateRecording(windAngleDeg, windSpeedKnots, boatSpeedKnots);
+            document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA`;
+            document.getElementById("speedDifference").textContent = `Difference: ${delta} kt (${deltaPct}%)`;
+        } else {
+            document.getElementById("closestPolar").textContent = `Closest Polar: -- kt TWS / --° TWA`;
+            document.getElementById("speedDifference").textContent = `Difference: -- kt (--%)`;
         }
     } catch (error) {
-        console.error("Error fetching SignalK data:", error);
+        console.error("Error fetching live performance data:", error);
     }
 }
 
-
 function startRecording(mode) {
-    recording = true;
-    currentPolarObject = mode === 'incremental' ? currentPolarObject : {};
+    fetch(`${API_BASE}/start-recording`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+    });
     document.getElementById('recordControls').style.display = 'block';
 }
 
 function stopRecording(save) {
-    if (save) {
-        fetch('/save-polar-data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentPolarObject)
-        }).then(() => fetchPolarData());
-    }
-    recording = false;
+    fetch(`${API_BASE}/stop-recording`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ save })
+    }).then(() => {
+        if (polarFiles.length > 0) {
+            fetchPolarData(polarFiles[0]);
+        }
+    });
+
     document.getElementById('recordControls').style.display = 'none';
 }
 
-// Poll SignalK data every second
-setInterval(fetchSignalKData, 1000);
+async function updateUI() {
+    const response = await fetch(`${API_BASE}/motoring`);
+    if (!response.ok) throw new Error('Failed to fetch live performance data');
 
-fetchPolarData();
+    const data = await response.json();
+    const motoring = data.motoring;
+
+    const overlay = document.getElementById("motoringOverlay");
+
+    //console.log(`Motoring: ${data.motoring}`);
+
+    if (motoring) {
+        if (!overlay) {
+            const cover = document.createElement("div");
+            cover.id = "motoringOverlay";
+            cover.style.position = "fixed";
+            cover.style.top = 0;
+            cover.style.left = 0;
+            cover.style.width = "100vw";
+            cover.style.height = "100vh";
+            cover.style.backgroundColor = "rgba(100, 100, 100, 0.7)";
+            cover.style.zIndex = 9999;
+            cover.style.display = "flex";
+            cover.style.alignItems = "center";
+            cover.style.justifyContent = "center";
+            cover.style.color = "white";
+            cover.style.fontSize = "2em";
+            cover.textContent = "Recording disabled while motoring...";
+            document.body.appendChild(cover);
+        }
+    } else {
+        if (overlay) overlay.remove();
+        fetchLivePerformance();
+    }
+}
+
+// Init
 fetchPolarFiles();
 initChart();
+setInterval(updateUI, 1000);
 
-// Toggle table visibility
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
     const toggleTableBtn = document.getElementById("toggleTableBtn");
     const polarTable = document.getElementById("polarTable");
 
-    toggleTableBtn.addEventListener("click", function () {
-        if (polarTable.style.display === "none") {
-            polarTable.style.display = "table";
-            toggleTableBtn.textContent = "Hide Table";
-        } else {
-            polarTable.style.display = "none";
-            toggleTableBtn.textContent = "Show Table";
-        }
+    toggleTableBtn.addEventListener("click", () => {
+        const isVisible = polarTable.style.display !== "none";
+        polarTable.style.display = isVisible ? "none" : "table";
+        toggleTableBtn.textContent = isVisible ? "Show Table" : "Hide Table";
     });
-});
 
-document.getElementById('recordPolarBtn').addEventListener('click', () => {
-    const mode = confirm("New Polar? Click OK. Incremental? Click Cancel.") ? 'new' : 'incremental';
-    startRecording(mode);
-});
+    document.getElementById('recordPolarBtn').addEventListener('click', () => {
+        const mode = confirm("New Polar? Click OK. Incremental? Click Cancel.") ? 'new' : 'incremental';
+        startRecording(mode);
+    });
 
-document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
-document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
+    document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
+    document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
 
-document.addEventListener("DOMContentLoaded", () => {
     fetchPolarFiles().then(() => {
         const select = document.getElementById('polarFileSelect');
         select.addEventListener('change', (event) => {

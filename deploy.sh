@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Variables
-SOURCE_DIR="/home/pi/projects/signalk-polar-recorder"
+SOURCE_DIR="/home/pi/projects/polar-recorder"
 SIGNALK_DIR="/home/pi/.signalk"
-PLUGIN_NAME="signalk-polar-recorder"
+PLUGIN_NAME="polar-recorder"
 
 ##################################
 # Create Global Link from Source
