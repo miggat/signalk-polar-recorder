@@ -3,6 +3,7 @@ const path = require('path');
 const apiRoutes = require('./apiRoutes');
 const recorder = require('./recorder');
 const polarStore = require('./polarStore');
+const WebSocket = require('ws');
 
 let unsubscribes = [];
 
@@ -14,6 +15,11 @@ module.exports = function (app) {
     schema: require('../schema.json'),
 
     start(options) {
+
+      function changeRecordingStatus(status) {
+        state.recordingActive = status;
+        state.notifyClients({ event: 'changeRecordStatus', status: status });
+      }
 
       let localSubscription = {
         context: 'vessels.self',
@@ -28,14 +34,38 @@ module.exports = function (app) {
         polarData: {},
         recording: {},
         recordingActive: false,
+        recordingMode: 'manual',
         propulsionInstances: [],
         polarDataFile: '',
+        automaticRecordingFile: '',
         recordingsDir: '',
         liveTWA: undefined,
         liveTWS: undefined,
         liveSTW: undefined,
         motoring: false
       };
+
+      const wss = new WebSocket.Server({ noServer: true });
+      const connectedClients = new Set();
+
+      state.notifyClients = function (message) {
+        const payload = JSON.stringify(message);
+        connectedClients.forEach(ws => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(payload);
+          }
+        });
+      };
+
+      app.server.on('upgrade', (request, socket, head) => {
+        if (request.url === '/plugins/polar-recorder/ws') {
+          wss.handleUpgrade(request, socket, head, ws => {
+            connectedClients.add(ws);
+            ws.on('close', () => connectedClients.delete(ws));
+          });
+        }
+      });
+
 
       app.subscriptionmanager.subscribe(
         localSubscription,
@@ -48,41 +78,43 @@ module.exports = function (app) {
             const selfProp = app.getSelfPath('propulsion');
             const instances = Object.keys(selfProp || {});
 
-            state.motoring = instances.some(name => {
+            let engineOn = instances.some(name => {
               const stateVal = app.getSelfPath(`propulsion.${name}.state`)?.value;
               const rev = app.getSelfPath(`propulsion.${name}.revolutions`)?.value;
               return stateVal !== 'stopped' || (typeof rev === 'number' && rev > 0);
             });
 
-            app.debug(`Motoring: ${state.motoring}`);
+            if (engineOn !== state.motoring) {
+              state.motoring = engineOn;
+              app.debug(`Motoring: ${state.motoring}`);
+              state.notifyClients({ event: 'changeMotoringStatus', engineOn });
+            }
           });
         }
       );
 
-      console.log("Polar Recorder plugin started");
+      app.debug("Polar Recorder plugin started");
 
       const sampleInterval = options.sampleInterval || 1000;
       const dataDir = app.getDataDirPath();
       const polarDataFile = path.join(dataDir, 'polar-data.json');
+      const automaticRecordingFile = path.join(dataDir, options.automaticRecordingFile ?? 'autoc-recording-polar.json');
       const recordingsDir = path.join(dataDir, 'polar-recordings');
 
-      console.log("Polar Recorder plugin data dir:", dataDir);
+      app.debug("Polar Recorder plugin data dir:", dataDir);
 
       const selfProp = app.getSelfPath('propulsion');
       const propulsionPaths = Object.keys(selfProp || {});
 
       state.polarData = polarStore.load(polarDataFile);
       state.polarDataFile = polarDataFile;
+      state.automaticRecordingFile = automaticRecordingFile;
       state.recordingsDir = recordingsDir;
       state.propulsionInstances = propulsionPaths;
 
-      if (options.importPolarData) {
-        const result = polarStore.import(options.importPolarData, state);
-        if (result.success) {
-          console.log("Polar data successfully imported via settings.");
-        } else {
-          app.error("Polar data import failed:", result.message);
-        }
+      if (options.automaticRecording) {
+        state.recordingMode = 'auto';
+        changeRecordingStatus(true);
       }
 
       state.interval = setInterval(() => {
@@ -90,19 +122,22 @@ module.exports = function (app) {
         const tws = app.getSelfPath('environment.wind.speedOverGround')?.value;
         const stw = app.getSelfPath('navigation.speedThroughWater')?.value;
 
-        if (twa !== undefined) {
-          state.liveTWA = twa * 180 / Math.PI;
-        }
-        if (tws !== undefined) {
-          state.liveTWS = tws * 1.94384;
-        }
-        if (stw !== undefined) {
-          state.liveSTW = stw * 1.94384;
+        state.liveTWA = twa ? twa * 180 / Math.PI : undefined;
+        state.liveTWS = tws ? tws * 1.94384 : undefined;
+        state.liveSTW = stw ? stw * 1.94384 : undefined;
+
+        if (state.liveTWA !== undefined && state.liveTWS !== undefined && state.liveSTW !== undefined) {
+          state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
+
+          if (!state.motoring && state.recordingActive) {
+            const filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
+            const updated = recorder.update(state, filePath);
+            if (updated) {
+              state.notifyClients({ event: 'polarUpdated', filePath });
+            }
+          }
         }
 
-        if (!state.motoring && twa !== undefined && tws !== undefined && stw !== undefined && state.recordingActive) {
-          recorder.update(state, state.liveTWA, state.liveTWS, state.liveSTW);
-        }
       }, sampleInterval);
 
       apiRoutes(app, state);

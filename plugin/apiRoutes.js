@@ -1,3 +1,4 @@
+// apiRoutes.js
 const fs = require('fs');
 const path = require('path');
 const { findClosest } = require('./compare');
@@ -15,8 +16,9 @@ module.exports = function (app, state) {
   app.get(`${API_BASE}/get-polar-files`, (req, res) => {
     const files = [];
     if (fs.existsSync(state.polarDataFile)) files.push(path.basename(state.polarDataFile));
+    if (fs.existsSync(state.automaticRecordingFile)) files.push(path.basename(state.automaticRecordingFile));
     if (fs.existsSync(state.recordingsDir)) {
-      const recs = fs.readdirSync(state.recordingsDir).map(f => `polar-recordings/${f}`);
+      const recs = fs.readdirSync(state.recordingsDir).map(f => `${f}`);
       files.push(...recs);
     }
     res.json(files);
@@ -82,5 +84,30 @@ module.exports = function (app, state) {
       motoring: motoring === true
     });
   });
+
+    app.get(`${API_BASE}/recording`, (req, res) => {
+    const { recordingActive } = state;
+
+    res.json({
+      recording: recordingActive === true
+    });
+  });
+
+  app.post(`${API_BASE}/create-polar-file`, (req, res) => {
+    const { fileName } = req.body;
+    if (!fileName || typeof fileName !== 'string') {
+      return res.status(400).json({ error: 'Invalid file name' });
+    }
+
+    const fullPath = path.join(state.recordingsDir, fileName);
+    try {
+      fs.mkdirSync(state.recordingsDir, { recursive: true });
+      fs.writeFileSync(fullPath, '{}');  // create empty polar
+      res.json({ success: true, message: `File ${fileName} created.` });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to create file' });
+    }
+  });
+
 
 };

@@ -1,14 +1,50 @@
+// recorder.js
+
+const fs = require('fs');
 const { roundToNearest } = require('./utils');
 
-function update(state, windAngle, windSpeed, boatSpeed) {
+function update(state, filePath) {
+  const windAngle = state.liveTWA;
+  const windSpeed = state.liveTWS;
+  const boatSpeed = state.liveSTW;
+
+  if (windAngle === undefined || windSpeed === undefined || boatSpeed === undefined) {
+    state.app.debug("Skipping update: missing live data");
+    return false;
+  }
+
   const twa = Math.abs(roundToNearest(windAngle, 5));
   const tws = roundToNearest(windSpeed, 2);
 
-  if (!state.recording[twa]) state.recording[twa] = {};
-  if (!state.recording[twa][tws] || state.recording[twa][tws] < boatSpeed) {
-    state.recording[twa][tws] = boatSpeed;
-    state.app.debug(`Recorded ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);
+  let polarData = {};
+  if (fs.existsSync(filePath)) {
+    try {
+      polarData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (err) {
+      state.app.error("Error reading polar file:", err);
+      return false;
+    }
   }
+
+  const now = new Date().toISOString();
+  const existing = polarData[twa]?.[tws];
+  const newEntry = { boatSpeed, timestamp: now };
+
+  let updated = false;
+  if (!existing || boatSpeed > existing.boatSpeed) {
+    if (!polarData[twa]) polarData[twa] = {};
+    polarData[twa][tws] = newEntry;
+    updated = true;
+
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(polarData, null, 2));
+      state.app.debug(`Recorded ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);
+    } catch (err) {
+      state.app.error("Error saving polar file:", err);
+    }
+  }
+
+  return updated;
 }
 
 module.exports = { update };

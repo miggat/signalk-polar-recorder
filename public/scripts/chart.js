@@ -69,11 +69,13 @@ function initChart() {
 function updateChart(polarData) {
   const seriesData = [];
   const windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b);
-  const windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
+  const windSpeeds = [...new Set(Object.values(polarData)
+    .flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
 
   windSpeeds.forEach((windSpeed, index) => {
     let data = windAngles.map(angle => {
-      const boatSpeed = polarData[angle]?.[windSpeed];
+      const entry = polarData[angle]?.[windSpeed];
+      const boatSpeed = entry?.boatSpeed;
       return boatSpeed != null ? [angle, boatSpeed] : null;
     }).filter(Boolean);
 

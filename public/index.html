@@ -14,13 +14,14 @@
 <body>
     <div id="headerContainer">
         <h2>Polar Data Viewer</h1>
-        <p id="updateTime">Polar file updated at: --:--:--</p>
-        <select id="polarFileSelect"></select>
-        <button id="recordPolarBtn">Record Polar</button>
-        <div id="recordControls">
-            <button id="stopSaveBtn">Stop & Save</button>
-            <button id="stopCancelBtn">Stop & Cancel</button>
-        </div>
+            <p id="updateTime">Polar file updated at: --:--:--</p>
+            <select id="polarFileSelect"></select>
+            <button id="newPolarBtn">Create new Polar</button>
+            <button id="recordPolarBtn">Record Polar</button>
+            <div id="recordControls">
+                <button id="stopSaveBtn">Stop & Save</button>
+                <button id="stopCancelBtn">Stop & Cancel</button>
+            </div>
     </div>
     <div id="liveData">
         <div>
@@ -42,6 +43,13 @@
             <thead></thead>
             <tbody id="polarTableBody"></tbody>
         </table>
+    </div>
+    <div id="motoringOverlay" class="">
+        Recording disabled while motoring...
+    </div>
+    <div id="recordingOverlay" class="">
+        <div class="red-dot"></div>
+        Recording in progress...
     </div>
     <script type="module" src="./scripts/main.js"></script>
 </body>

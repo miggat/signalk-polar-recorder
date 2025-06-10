@@ -7,23 +7,18 @@
       "description": "The interval at which to record data points.",
       "default": 1000
     },
-    "alwaysRecording": {
+    "automaticRecording": {
       "type": "boolean",
       "title": "Always recording in background",
       "description": "Toggle to enable or disable constant recording of polar data.",
       "default": false
     },
-    "Constant recording polar file": {
+    "automaticRecordingFile": {
       "type": "string",
-      "title": "File name for constant recording polar",
+      "title": "File name for automatic recording polar",
       "description":"The interval at which to record data points.",
-      "format": "text"
-    },
-    "importPolarData": {
-      "type": "string",
-      "title": "Import Polar Data",
-      "description": "Paste polar data in JSON or CSV format. This will overwrite the existing 'polar-data.json' file.",
-      "format": "textarea"
+      "format": "text",
+      "default": "auto-recording-polar.json"
     }
   }
 }

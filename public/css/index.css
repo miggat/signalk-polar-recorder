@@ -89,3 +89,39 @@ th {
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
     z-index: 1;
 }
+
+#motoringOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(100, 100, 100, 0.7);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+}
+
+#recordingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(100, 100, 100, 0.7);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+}
+
+#recordingOverlay>.red-dot {
+    position: fixed;
+    left: 24px;
+    top: 24px;
+}
