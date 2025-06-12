@@ -278,6 +278,80 @@ function exportCurrentPolarToCSV() {
     document.body.removeChild(a);
 }
 
+
+function triggerFileImport() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.pol';
+    input.addEventListener('change', () => {
+        if (input.files?.length) {
+            importPolarFile(input.files[0]);
+        }
+    });
+    input.click();
+}
+
+
+async function importPolarFile(file) {
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+        const text = reader.result;
+        const lines = text.trim().split(/\r?\n/);
+
+        const delimiter = lines[0].includes(',') ? ',' : '\t';
+        const headers = lines[0].split(delimiter).slice(1).map(Number);
+
+        if (headers.some(isNaN)) {
+            alert("Invalid header: some TWS values are not numbers");
+            return;
+        }
+
+        const polar = {};
+        let count = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(delimiter);
+            const angle = parseInt(cols[0]);
+            if (isNaN(angle)) {
+                alert(`Invalid TWA at line ${i + 1}`);
+                return;
+            }
+            if (!polar[angle]) polar[angle] = {};
+            cols.slice(1).forEach((val, j) => {
+                const boatSpeed = parseFloat(val);
+                if (!isNaN(boatSpeed)) {
+                    polar[angle][headers[j]] = {
+                        boatSpeed,
+                        timestamp: new Date().toISOString()
+                    };
+                    count++;
+                }
+            });
+        }
+
+        const originalName = file.name.replace(/\.[^.]+$/, '');
+        const filename = `${originalName}.json`;
+
+        try {
+            const response = await fetch(`${API_BASE}/import-polar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: filename, data: polar })
+            });
+
+            if (!response.ok) throw new Error("Failed to import file");
+            alert(`Import successful: ${count} points saved.`);
+            await fetchPolarFiles(filename);
+        } catch (error) {
+            alert("Import failed: " + error.message);
+        }
+    };
+
+
+    reader.readAsText(file);
+}
+
 function startRecording(polarFile) {
     fetch(`${API_BASE}/start-recording`, {
         method: 'POST',
@@ -324,6 +398,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById('exportPolarBtn').addEventListener('click', exportCurrentPolarToCSV);
+
+    document.getElementById('importPolarBtn').addEventListener('click', triggerFileImport);
 
     // document.getElementById('recordPolarBtn').addEventListener('click', () => {
     //     startRecording(selectedPolarFile);

@@ -14,16 +14,16 @@ module.exports = function (app, state) {
   });
 
   app.get(`${API_BASE}/get-polar-files`, (req, res) => {
-    const files = [];
-    if (fs.existsSync(state.polarDataFile)) files.push(path.basename(state.polarDataFile));
-    if (fs.existsSync(state.automaticRecordingFile)) files.push(path.basename(state.automaticRecordingFile));
-    if (fs.existsSync(state.recordingsDir)) {
-      const recs = fs.readdirSync(state.recordingsDir).map(f => `${f}`);
-      files.push(...recs);
+    try {
+      const files = fs.readdirSync(app.getDataDirPath())
+        .filter(f => f.endsWith('.json'));
+      res.json(files);
+    } catch (err) {
+      app.error('Error listing polar files:', err);
+      res.status(500).json({ error: 'Failed to list polar files' });
     }
-    res.json(files);
   });
-
+  
   app.post(`${API_BASE}/start-recording`, (req, res) => {
     state.recording = req.body?.mode === 'incremental' ? state.recording : {};
     state.recordingActive = true;
@@ -34,8 +34,7 @@ module.exports = function (app, state) {
     state.recordingActive = false;
     if (req.body?.save) {
       const ts = new Date().toISOString().replace(/[-:T]/g, '').split('.')[0];
-      const file = path.join(state.recordingsDir, `polar-${ts}.json`);
-      fs.mkdirSync(state.recordingsDir, { recursive: true });
+      const file = path.join(app.getDataDirPath(), `polar-${ts}.json`);
       fs.writeFileSync(file, JSON.stringify(state.recording, null, 2));
       res.json({ success: true, message: `Saved as ${path.basename(file)}` });
     } else {
@@ -85,7 +84,7 @@ module.exports = function (app, state) {
     });
   });
 
-    app.get(`${API_BASE}/recording`, (req, res) => {
+  app.get(`${API_BASE}/recording`, (req, res) => {
     const { recordingActive } = state;
 
     res.json({
@@ -99,9 +98,8 @@ module.exports = function (app, state) {
       return res.status(400).json({ error: 'Invalid file name' });
     }
 
-    const fullPath = path.join(state.recordingsDir, fileName);
+    const fullPath = path.join(app.getDataDirPath(), fileName);
     try {
-      fs.mkdirSync(state.recordingsDir, { recursive: true });
       fs.writeFileSync(fullPath, '{}');  // create empty polar
       res.json({ success: true, message: `File ${fileName} created.` });
     } catch (err) {
@@ -109,5 +107,22 @@ module.exports = function (app, state) {
     }
   });
 
+  app.post(`${API_BASE}/import-polar`, (req, res) => {
+    const { fileName, data } = req.body;
+    if (!fileName || typeof fileName !== 'string' || typeof data !== 'object') {
+      return res.status(400).json({ error: 'Invalid input' });
+    }
+
+    const fullPath = path.join(app.getDataDirPath(), fileName.endsWith('.json') ? fileName : fileName + '.json');
+
+    app.debug('Saving new polar file: ', fullPath);
+
+    try {
+      fs.writeFileSync(fullPath, JSON.stringify(data, null, 2));
+      res.json({ success: true, message: `File ${fileName} imported.` });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to save imported file' });
+    }
+  });
 
 };

@@ -57,7 +57,6 @@ module.exports = function (app) {
         propulsionInstances: [],
         polarDataFile: '',
         automaticRecordingFile: '',
-        recordingsDir: '',
         liveTWA: undefined,
         liveTWS: undefined,
         liveSTW: undefined,
@@ -146,7 +145,7 @@ module.exports = function (app) {
       const dataDir = app.getDataDirPath();
       const polarDataFile = path.join(dataDir, 'polar-data.json');
       const automaticRecordingFile = path.join(dataDir, options.automaticRecordingFile ?? 'auto-recording-polar.json');
-      const recordingsDir = path.join(dataDir, 'polar-recordings');
+      
 
       app.debug("Polar Recorder plugin data dir:", dataDir);
 
@@ -156,7 +155,6 @@ module.exports = function (app) {
       state.polarData = polarStore.load(polarDataFile);
       state.polarDataFile = polarDataFile;
       state.automaticRecordingFile = automaticRecordingFile;
-      state.recordingsDir = recordingsDir;
       state.propulsionInstances = propulsionPaths;
 
 
