@@ -78,7 +78,7 @@ async function fetchPolarData(polarFile) {
         const response = await fetch(url);
         if (response.ok) {
             latestPolarData = await response.json();
-            //generateTable(latestPolarData);
+            generateTable(latestPolarData);
             updateChart(latestPolarData);
             updateTimestamp();
         } else {
@@ -127,7 +127,7 @@ function generateTable(polarData) {
     tableBody.innerHTML = windAngles.map(angle => {
         let row = `<tr><td>${angle}°</td>`;
         windSpeeds.forEach(speed => {
-            const boatSpeed = polarData[angle]?.[speed].boatSpeed;
+            const boatSpeed = polarData[angle]?.[speed]?.boatSpeed;
             row += `<td>${boatSpeed != null ? boatSpeed.toFixed(1) : '-'}</td>`;
         });
         return row + '</tr>';
