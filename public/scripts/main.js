@@ -257,13 +257,13 @@ function stopRecording(save) {
     document.getElementById('recordControls').style.display = 'none';
 }
 
-
+// Init chart
+initChart();
 // Init
 fetchPolarFiles();
-fetchMotoringStatus();
-fetchRecordingStatus();
-initChart();
-fetchLivePerformance();
+// fetchMotoringStatus();
+// fetchRecordingStatus();
+// fetchLivePerformance();
 // Initial connection
 connectWebSocket();
 

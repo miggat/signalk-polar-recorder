@@ -20,7 +20,7 @@ module.exports = function (app) {
         if (status != state.recordingActive) {
           state.recordingActive = status;
           state.notifyClients({ event: 'changeRecordStatus', status: status });
-          if(status){
+          if (status) {
             state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
           }
           app.debug(">>>>>>>>>> Recording", status);
@@ -81,6 +81,29 @@ module.exports = function (app) {
         if (request.url === '/plugins/polar-recorder/ws') {
           wss.handleUpgrade(request, socket, head, ws => {
             connectedClients.add(ws);
+
+            // Enviar estado inicial al cliente recién conectado
+            const initMessages = [
+              { event: 'changeMotoringStatus', engineOn: state.motoring },
+              { event: 'changeRecordStatus', status: state.recordingActive },
+              {
+                event: 'updateLivePerformance',
+                twa: state.liveTWA,
+                tws: state.liveTWS,
+                stw: state.liveSTW
+              }
+            ];
+
+            initMessages.forEach(msg => {
+              try {
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify(msg));
+                }
+              } catch (err) {
+                app.error("Error sending initial WS message:", err);
+              }
+            });
+
             ws.on('close', () => connectedClients.delete(ws));
           });
         }
@@ -134,7 +157,7 @@ module.exports = function (app) {
       state.automaticRecordingFile = automaticRecordingFile;
       state.recordingsDir = recordingsDir;
       state.propulsionInstances = propulsionPaths;
-      
+
 
       if (options.automaticRecording) {
         state.recordingMode = 'auto';
