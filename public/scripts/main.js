@@ -32,20 +32,25 @@ function connectWebSocket() {
                 break;
 
             case 'changeRecordStatus':
-                document.getElementById('recordControls').style.display = message.status ? 'block' : 'none';
+                var recordingControls = document.getElementById('recordControls');
+                if (recordingControls) {
+                    recordingControls.style.display = message.status ? 'block' : 'none';
+                }
                 document.getElementById('recordingOverlay').style.display = message.status ? 'block' : 'none';
                 break;
 
             case 'polarUpdated':
-                const updatedFile = message.filePath.split('/').pop(); // Extract filename
-                const select = document.getElementById('polarFileSelect');
+                if (message.filePath != undefined) {
+                    const updatedFile = message.filePath.split('/').pop(); // Extract filename
+                    const select = document.getElementById('polarFileSelect');
 
-                if (select && Array.from(select.options).some(opt => opt.value === updatedFile)) {
-                    select.value = updatedFile;
-                    fetchPolarData(updatedFile);
-                } else {
-                    // If the file is new, re-fetch the list and then select the new one
-                    fetchPolarFiles(updatedFile);
+                    if (select && Array.from(select.options).some(opt => opt.value === updatedFile)) {
+                        select.value = updatedFile;
+                        fetchPolarData(updatedFile);
+                    } else {
+                        // If the file is new, re-fetch the list and then select the new one
+                        fetchPolarFiles(updatedFile);
+                    }
                 }
                 break;
 
@@ -181,20 +186,22 @@ function findClosestPolarPoint(twa, tws, polarData) {
 function updateLivePerformance(twa, tws, stw) {
     updateLivePoint(twa, stw);
 
-    document.getElementById("windAngle").textContent = `Wind Angle: ${twa.toFixed(0)}°`;
-    document.getElementById("windSpeed").textContent = `Wind Speed: ${tws.toFixed(1)} kt`;
-    document.getElementById("boatSpeed").textContent = `Boat Speed: ${stw.toFixed(1)} kt`;
+    if (twa != undefined && tws != undefined && stw != undefined) {
+        document.getElementById("windAngle").textContent = `Wind Angle: ${twa.toFixed(0)}°`;
+        document.getElementById("windSpeed").textContent = `Wind Speed: ${tws.toFixed(1)} kt`;
+        document.getElementById("boatSpeed").textContent = `Boat Speed: ${stw.toFixed(1)} kt`;
 
-    if (Object.keys(latestPolarData).length > 0) {
-        const { closestTWA, closestTWS, expectedBoatSpeed } = findClosestPolarPoint(twa, tws, latestPolarData);
-        const delta = (stw - expectedBoatSpeed).toFixed(2);
-        const deltaPct = expectedBoatSpeed > 0 ? ((delta / expectedBoatSpeed) * 100).toFixed(1) : "--";
+        if (Object.keys(latestPolarData).length > 0) {
+            const { closestTWA, closestTWS, expectedBoatSpeed } = findClosestPolarPoint(twa, tws, latestPolarData);
+            const delta = (stw - expectedBoatSpeed).toFixed(2);
+            const deltaPct = expectedBoatSpeed > 0 ? ((delta / expectedBoatSpeed) * 100).toFixed(1) : "--";
 
-        document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA`;
-        document.getElementById("speedDifference").textContent = `Difference: ${delta} kt (${deltaPct}%)`;
-    } else {
-        document.getElementById("closestPolar").textContent = `Closest Polar: -- kt TWS / --° TWA`;
-        document.getElementById("speedDifference").textContent = `Difference: -- kt (--%)`;
+            document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA`;
+            document.getElementById("speedDifference").textContent = `Difference: ${delta} kt (${deltaPct}%)`;
+        } else {
+            document.getElementById("closestPolar").textContent = `Closest Polar: -- kt TWS / --° TWA`;
+            document.getElementById("speedDifference").textContent = `Difference: -- kt (--%)`;
+        }
     }
 }
 
@@ -232,6 +239,43 @@ async function fetchRecordingStatus() {
     } else {
         overlay.style.display = 'none';
     }
+}
+
+function exportCurrentPolarToCSV() {
+    if (!latestPolarData || Object.keys(latestPolarData).length === 0) {
+        alert("No polar data loaded.");
+        return;
+    }
+
+    const angles = Object.keys(latestPolarData).map(Number).sort((a, b) => a - b);
+    const speeds = [...new Set(
+        Object.values(latestPolarData)
+            .flatMap(row => Object.keys(row).map(Number))
+    )].sort((a, b) => a - b);
+
+    // Build CSV header
+    let csv = "TWA/TWS," + speeds.join(",") + "\n";
+
+    // Build rows
+    for (const angle of angles) {
+        const row = [angle];
+        for (const tws of speeds) {
+            const point = latestPolarData[angle]?.[tws];
+            row.push(point?.boatSpeed?.toFixed(2) ?? "");
+        }
+        csv += row.join(",") + "\n";
+    }
+
+    // Trigger download
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    const filename = (selectedPolarFile || "polar").replace(/\.json$/i, ".csv");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function startRecording(polarFile) {
@@ -279,40 +323,42 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleTableBtn.textContent = isVisible ? "Show Table" : "Hide Table";
     });
 
-    document.getElementById('recordPolarBtn').addEventListener('click', () => {
-        startRecording(selectedPolarFile);
-    });
+    document.getElementById('exportPolarBtn').addEventListener('click', exportCurrentPolarToCSV);
 
-    document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
-    document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
+    // document.getElementById('recordPolarBtn').addEventListener('click', () => {
+    //     startRecording(selectedPolarFile);
+    // });
 
-    document.getElementById('newPolarBtn').addEventListener('click', async () => {
-        let filename = prompt("Enter new polar file name:");
-        if (!filename || filename.trim() === "") {
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            const h = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            filename = `Polar-${y}${m}${d}_${h}${min}.json`;
-        } else if (!filename.endsWith(".json")) {
-            filename += ".json";
-        }
+    // document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
+    // document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
 
-        try {
-            const response = await fetch(`${API_BASE}/create-polar-file`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: filename })
-            });
+    // document.getElementById('newPolarBtn').addEventListener('click', async () => {
+    //     let filename = prompt("Enter new polar file name:");
+    //     if (!filename || filename.trim() === "") {
+    //         const now = new Date();
+    //         const y = now.getFullYear();
+    //         const m = String(now.getMonth() + 1).padStart(2, '0');
+    //         const d = String(now.getDate()).padStart(2, '0');
+    //         const h = String(now.getHours()).padStart(2, '0');
+    //         const min = String(now.getMinutes()).padStart(2, '0');
+    //         filename = `Polar-${y}${m}${d}_${h}${min}.json`;
+    //     } else if (!filename.endsWith(".json")) {
+    //         filename += ".json";
+    //     }
 
-            if (!response.ok) throw new Error("Failed to create file");
-            await fetchPolarFiles(filename);
-        } catch (error) {
-            alert("Error creating polar file: " + error.message);
-        }
-    });
+    //     try {
+    //         const response = await fetch(`${API_BASE}/create-polar-file`, {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({ fileName: filename })
+    //         });
+
+    //         if (!response.ok) throw new Error("Failed to create file");
+    //         await fetchPolarFiles(filename);
+    //     } catch (error) {
+    //         alert("Error creating polar file: " + error.message);
+    //     }
+    // });
 
     fetchPolarFiles().then(() => {
         const select = document.getElementById('polarFileSelect');
@@ -320,4 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
             fetchPolarData(event.target.value);
         });
     });
+
+
+
 });
