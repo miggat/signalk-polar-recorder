@@ -21,6 +21,7 @@ module.exports = function (app) {
           state.recordingActive = status;
           state.notifyClients({ event: 'changeRecordStatus', status: status });
           if (status) {
+            state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
             state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
           }
           app.debug(">>>>>>>>>> Recording", status);
