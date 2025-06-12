@@ -20,7 +20,23 @@ module.exports = function (app) {
         if (status != state.recordingActive) {
           state.recordingActive = status;
           state.notifyClients({ event: 'changeRecordStatus', status: status });
+          if(status){
+            state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
+          }
           app.debug(">>>>>>>>>> Recording", status);
+        }
+      }
+
+      function evaluateRecordingConditions(validData) {
+        if (state.motoring) {
+          changeRecordingStatus(false);
+          return;
+        }
+
+        if (state.recordingMode === 'auto' && validData) {
+          changeRecordingStatus(true);
+        } else {
+          changeRecordingStatus(false);
         }
       }
 
@@ -45,7 +61,8 @@ module.exports = function (app) {
         liveTWA: undefined,
         liveTWS: undefined,
         liveSTW: undefined,
-        motoring: false
+        motoring: false,
+        filePath: undefined
       };
 
       const wss = new WebSocket.Server({ noServer: true });
@@ -91,17 +108,7 @@ module.exports = function (app) {
               state.motoring = engineOn;
               app.debug(`Motoring: ${state.motoring}`);
 
-              if (state.motoring) {
-                if (state.recordingActive) {
-                  changeRecordingStatus(false);
-                }
-              }
-              else {
-                if (!state.recordingActive && state.recordingMode === 'auto') {
-                  changeRecordingStatus(true);
-                }
-              }
-
+              evaluateRecordingConditions(true);
 
               state.notifyClients({ event: 'changeMotoringStatus', engineOn });
             }
@@ -127,6 +134,7 @@ module.exports = function (app) {
       state.automaticRecordingFile = automaticRecordingFile;
       state.recordingsDir = recordingsDir;
       state.propulsionInstances = propulsionPaths;
+      
 
       if (options.automaticRecording) {
         state.recordingMode = 'auto';
@@ -155,12 +163,9 @@ module.exports = function (app) {
         var validData = twa !== undefined && tws !== undefined && stw !== undefined;
 
 
+        evaluateRecordingConditions(validData);
+
         if (validData) {
-
-          if (!state.recordingActive) {
-            changeRecordingStatus(true);
-          }
-
           state.liveTWA = twa ? twa * 180 / Math.PI : undefined;
           state.liveTWS = tws ? tws * 1.94384 : undefined;
           state.liveSTW = stw ? stw * 1.94384 : undefined;
@@ -168,15 +173,12 @@ module.exports = function (app) {
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
 
           if (!state.motoring && state.recordingActive) {
-            const filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
-            const updated = recorder.update(state, filePath);
+            state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
+            const updated = recorder.update(state, state.filePath);
             if (updated) {
-              state.notifyClients({ event: 'polarUpdated', filePath });
+              state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
             }
           }
-        }
-        else if (state.recordingActive) {
-          changeRecordingStatus(false);
         }
 
       }, sampleInterval);

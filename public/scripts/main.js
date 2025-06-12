@@ -32,7 +32,8 @@ function connectWebSocket() {
                 break;
 
             case 'changeRecordStatus':
-                document.getElementById('recordControls').style.display = message.value ? 'block' : 'none';
+                document.getElementById('recordControls').style.display = message.status ? 'block' : 'none';
+                document.getElementById('recordingOverlay').style.display = message.status ? 'block' : 'none';
                 break;
 
             case 'polarUpdated':
