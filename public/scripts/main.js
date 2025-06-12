@@ -7,6 +7,8 @@ let latestPolarData = {};
 let polarFiles = [];
 let selectedPolarFile;
 
+let showFullChart = true;
+
 let ws;
 let reconnectInterval;
 
@@ -84,7 +86,7 @@ async function fetchPolarData(polarFile) {
         if (response.ok) {
             latestPolarData = await response.json();
             generateTable(latestPolarData);
-            updateChart(latestPolarData);
+            updateChart(latestPolarData, showFullChart);
             updateTimestamp();
         } else {
             console.error('Failed to fetch polar data');
@@ -376,7 +378,7 @@ function stopRecording(save) {
 }
 
 // Init chart
-initChart();
+initChart(showFullChart);
 // Init
 fetchPolarFiles();
 // fetchMotoringStatus();
@@ -389,7 +391,6 @@ connectWebSocket();
 
 document.addEventListener("DOMContentLoaded", () => {
     const toggleTableBtn = document.getElementById("toggleTableBtn");
-    const polarTable = document.getElementById("polarTable");
 
     toggleTableBtn.addEventListener("click", () => {
         const container = document.getElementById("toggleTableContainer");
@@ -407,6 +408,21 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('exportPolarBtn').addEventListener('click', exportCurrentPolarToCSV);
 
     document.getElementById('importPolarBtn').addEventListener('click', triggerFileImport);
+
+    const toggleFullChartBtn = document.getElementById("toggleFullChartBtn");
+
+    toggleFullChartBtn.addEventListener("click", () => {
+
+        showFullChart = !showFullChart;
+        if (showFullChart) {
+            toggleFullChartBtn.textContent = "Half polar";
+        } else {
+            toggleFullChartBtn.textContent = "Mirror polar";
+        }
+
+        initChart(showFullChart);
+        fetchPolarData(selectedPolarFile);
+    });
 
     // document.getElementById('recordPolarBtn').addEventListener('click', () => {
     //     startRecording(selectedPolarFile);

@@ -6,7 +6,12 @@ const colors = [
 
 let chart;
 
-function initChart() {
+function initChart(fullChart) {
+  const startAngle = fullChart ? -180 : 0;
+  const endAngle = fullChart ? 180 : 180; // keep it symmetric for Highcharts
+  const xMin = fullChart ? -180 : 0;
+  const xMax = 180;
+
   chart = Highcharts.chart('container', {
     chart: {
       polar: true,
@@ -17,13 +22,13 @@ function initChart() {
     title: { text: '' },
     pane: {
       size: '100%',
-      startAngle: -180,
-      endAngle: 180
+      startAngle,
+      endAngle
     },
     xAxis: {
       tickInterval: 15,
-      min: -180,
-      max: 180,
+      min: xMin,
+      max: xMax,
       labels: {
         formatter: function () {
           return this.value + '°';
@@ -66,7 +71,7 @@ function initChart() {
   });
 }
 
-function updateChart(polarData) {
+function updateChart(polarData, fullChart = true) {
   const seriesData = [];
   const windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b);
   const windSpeeds = [...new Set(Object.values(polarData)
@@ -79,8 +84,10 @@ function updateChart(polarData) {
       return boatSpeed != null ? [angle, boatSpeed] : null;
     }).filter(Boolean);
 
-    let mirroredData = data.map(([angle, speed]) => [-angle, speed]).reverse();
-    data = [...data, ...mirroredData];
+    if (fullChart) {
+      const mirroredData = data.map(([angle, speed]) => [-angle, speed]).reverse();
+      data = [...data, ...mirroredData];
+    }
 
     seriesData.push({
       name: `${windSpeed} kt wind`,
@@ -97,6 +104,7 @@ function updateChart(polarData) {
   seriesData.forEach(s => chart.addSeries(s, false));
   chart.redraw();
 }
+
 
 function updateLivePoint(angle, speed) {
   const liveSeries = chart.series.find(s => s.name === 'Current Performance');

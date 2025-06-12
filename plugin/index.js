@@ -165,7 +165,7 @@ module.exports = function (app) {
       }
 
       state.interval = setInterval(() => {
-        const maxAgeMs = (sampleInterval || 1000) * 10;
+        const maxAgeMs = (sampleInterval || 1000) * 5;
 
         const twaPath = app.getSelfPath('environment.wind.angleTrueGround');
         const twa = twaPath?.timestamp && Date.now() - new Date(twaPath.timestamp).getTime() <= maxAgeMs

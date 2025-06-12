@@ -121,6 +121,29 @@ th {
 }
 
 
+#chartControls {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    text-align: center;
+    font-size: 1.2em;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 8px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    max-height: 90vh;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+#toggleFullChartBtn {
+    margin-top: 5px;
+    padding: 8px 12px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
 
 #motoringOverlay {
     position: fixed;
