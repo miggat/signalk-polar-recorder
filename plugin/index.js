@@ -17,9 +17,11 @@ module.exports = function (app) {
     start(options) {
 
       function changeRecordingStatus(status) {
-        state.recordingActive = status;
-        state.notifyClients({ event: 'changeRecordStatus', status: status });
-        app.debug(">>>>>>>>>> Recording", status);
+        if (status != state.recordingActive) {
+          state.recordingActive = status;
+          state.notifyClients({ event: 'changeRecordStatus', status: status });
+          app.debug(">>>>>>>>>> Recording", status);
+        }
       }
 
       let localSubscription = {
