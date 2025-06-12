@@ -19,6 +19,7 @@ module.exports = function (app) {
       function changeRecordingStatus(status) {
         state.recordingActive = status;
         state.notifyClients({ event: 'changeRecordStatus', status: status });
+        app.debug(">>>>>>>>>> Recording", status);
       }
 
       let localSubscription = {
@@ -87,6 +88,19 @@ module.exports = function (app) {
             if (engineOn !== state.motoring) {
               state.motoring = engineOn;
               app.debug(`Motoring: ${state.motoring}`);
+
+              if (state.motoring) {
+                if (state.recordingActive) {
+                  changeRecordingStatus(false);
+                }
+              }
+              else {
+                if (!state.recordingActive && state.recordingMode === 'auto') {
+                  changeRecordingStatus(true);
+                }
+              }
+
+
               state.notifyClients({ event: 'changeMotoringStatus', engineOn });
             }
           });
@@ -98,7 +112,7 @@ module.exports = function (app) {
       const sampleInterval = options.sampleInterval || 1000;
       const dataDir = app.getDataDirPath();
       const polarDataFile = path.join(dataDir, 'polar-data.json');
-      const automaticRecordingFile = path.join(dataDir, options.automaticRecordingFile ?? 'autoc-recording-polar.json');
+      const automaticRecordingFile = path.join(dataDir, options.automaticRecordingFile ?? 'auto-recording-polar.json');
       const recordingsDir = path.join(dataDir, 'polar-recordings');
 
       app.debug("Polar Recorder plugin data dir:", dataDir);
@@ -118,15 +132,37 @@ module.exports = function (app) {
       }
 
       state.interval = setInterval(() => {
-        const twa = app.getSelfPath('environment.wind.angleTrueGround')?.value;
-        const tws = app.getSelfPath('environment.wind.speedOverGround')?.value;
-        const stw = app.getSelfPath('navigation.speedThroughWater')?.value;
+        const maxAgeMs = (sampleInterval || 1000) * 10;
 
-        state.liveTWA = twa ? twa * 180 / Math.PI : undefined;
-        state.liveTWS = tws ? tws * 1.94384 : undefined;
-        state.liveSTW = stw ? stw * 1.94384 : undefined;
+        const twaPath = app.getSelfPath('environment.wind.angleTrueGround');
+        const twa = twaPath?.timestamp && Date.now() - new Date(twaPath.timestamp).getTime() <= maxAgeMs
+          ? twaPath.value
+          : undefined;
 
-        if (state.liveTWA !== undefined && state.liveTWS !== undefined && state.liveSTW !== undefined) {
+        const twsPath = app.getSelfPath('environment.wind.speedOverGround');
+        const tws = twsPath?.timestamp && Date.now() - new Date(twsPath.timestamp).getTime() <= maxAgeMs
+          ? twsPath.value
+          : undefined;
+
+        const stwPath = app.getSelfPath('navigation.speedThroughWater');
+        const stw = stwPath?.timestamp && Date.now() - new Date(stwPath.timestamp).getTime() <= maxAgeMs
+          ? stwPath.value
+          : undefined;
+
+
+        var validData = twa !== undefined && tws !== undefined && stw !== undefined;
+
+
+        if (validData) {
+
+          if (!state.recordingActive) {
+            changeRecordingStatus(true);
+          }
+
+          state.liveTWA = twa ? twa * 180 / Math.PI : undefined;
+          state.liveTWS = tws ? tws * 1.94384 : undefined;
+          state.liveSTW = stw ? stw * 1.94384 : undefined;
+
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
 
           if (!state.motoring && state.recordingActive) {
@@ -136,6 +172,9 @@ module.exports = function (app) {
               state.notifyClients({ event: 'polarUpdated', filePath });
             }
           }
+        }
+        else if (state.recordingActive) {
+          changeRecordingStatus(false);
         }
 
       }, sampleInterval);
