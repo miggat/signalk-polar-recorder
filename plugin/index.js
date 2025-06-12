@@ -24,7 +24,7 @@ module.exports = function (app) {
             state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
             state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
           }
-          app.debug(">>>>>>>>>> Recording", status);
+          app.debug(">>>>>>>>>>>>>>>>>>>> Recording", status);
         }
       }
 
@@ -64,6 +64,8 @@ module.exports = function (app) {
         motoring: false,
         filePath: undefined
       };
+
+      let courseHistory = [];
 
       const wss = new WebSocket.Server({ noServer: true });
       const connectedClients = new Set();
@@ -146,7 +148,7 @@ module.exports = function (app) {
       const dataDir = app.getDataDirPath();
       const polarDataFile = path.join(dataDir, 'polar-data.json');
       const automaticRecordingFile = path.join(dataDir, options.automaticRecordingFile ?? 'auto-recording-polar.json');
-      
+
 
       app.debug("Polar Recorder plugin data dir:", dataDir);
 
@@ -182,9 +184,32 @@ module.exports = function (app) {
           ? stwPath.value
           : undefined;
 
+        const cogPath = app.getSelfPath('navigation.courseOverGroundTrue');
+        const cog = cogPath?.timestamp && Date.now() - new Date(cogPath.timestamp).getTime() <= maxAgeMs
+          ? cogPath.value
+          : undefined;
 
-        var validData = twa !== undefined && tws !== undefined && stw !== undefined;
 
+        if (cog !== undefined) {
+          const now = Date.now();
+          courseHistory.push({ time: now, angle: cog });
+
+          // Remove entries older than minLenghtValidData seconds
+          const minAge = now - (options.minLenghtValidData * 1000);
+          courseHistory = courseHistory.filter(entry => entry.time >= minAge);
+        }
+
+        let stableCourse = false;
+
+        if (courseHistory.length > 0) {
+          const angles = courseHistory.map(e => e.angle);
+          const reference = angles[0];
+          const maxDelta = Math.max(...angles.map(a => Math.abs(a - reference)));
+
+          stableCourse = maxDelta <= options.sameCourseAngleOffset;
+        }
+
+        const validData = twa !== undefined && tws !== undefined && stw !== undefined && cog !== undefined && stableCourse;
 
         evaluateRecordingConditions(validData);
 

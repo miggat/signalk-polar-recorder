@@ -16,9 +16,21 @@
     "automaticRecordingFile": {
       "type": "string",
       "title": "File name for automatic recording polar",
-      "description":"The interval at which to record data points.",
+      "description": "The interval at which to record data points.",
       "format": "text",
       "default": "auto-recording-polar.json"
+    },
+    "minLenghtValidData": {
+      "type": "number",
+      "title": "Minimum time on course (seconds)",
+      "description": "The minimum time in the same course to consider the values are valid to record.",
+      "default": 5
+    },
+    "sameCourseAngleOffset": {
+      "type": "number",
+      "title": "Accepted course variation to consider stable course (degrees)",
+      "description": "",
+      "default": 2
     }
   }
 }
