@@ -114,25 +114,25 @@ function updateTimestamp() {
     document.getElementById('updateTime').textContent = `Updated at: ${now.toLocaleTimeString()}`;
 }
 
-// function generateTable(polarData) {
-//     const tableHeader = document.querySelector('#polarTable thead');
-//     const tableBody = document.querySelector('#polarTableBody');
+function generateTable(polarData) {
+    const tableHeader = document.querySelector('#polarTable thead');
+    const tableBody = document.querySelector('#polarTableBody');
 
-//     let windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b).filter(a => a !== 0);
-//     let windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b).filter(s => s !== 0);
+    let windAngles = Object.keys(polarData).map(Number).sort((a, b) => a - b).filter(a => a !== 0);
+    let windSpeeds = [...new Set(Object.values(polarData).flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b).filter(s => s !== 0);
 
-//     let headerRow = '<tr><th>TWA/TWS</th>' + windSpeeds.map(s => `<th>${s} kt</th>`).join('') + '</tr>';
-//     tableHeader.innerHTML = headerRow;
+    let headerRow = '<tr><th>TWA/TWS</th>' + windSpeeds.map(s => `<th>${s} kt</th>`).join('') + '</tr>';
+    tableHeader.innerHTML = headerRow;
 
-//     tableBody.innerHTML = windAngles.map(angle => {
-//         let row = `<tr><td>${angle}°</td>`;
-//         windSpeeds.forEach(speed => {
-//             const boatSpeed = polarData[angle]?.[speed];
-//             row += `<td>${boatSpeed != null ? boatSpeed.toFixed(1) : '-'}</td>`;
-//         });
-//         return row + '</tr>';
-//     }).join('');
-// }
+    tableBody.innerHTML = windAngles.map(angle => {
+        let row = `<tr><td>${angle}°</td>`;
+        windSpeeds.forEach(speed => {
+            const boatSpeed = polarData[angle]?.[speed].boatSpeed;
+            row += `<td>${boatSpeed != null ? boatSpeed.toFixed(1) : '-'}</td>`;
+        });
+        return row + '</tr>';
+    }).join('');
+}
 
 function findClosestPolarPoint(twa, tws, polarData) {
     let closestTWA = null;
