@@ -77,11 +77,17 @@ function updateChart(polarData, fullChart = true) {
   const windSpeeds = [...new Set(Object.values(polarData)
     .flatMap(obj => Object.keys(obj).map(Number)))].sort((a, b) => a - b);
 
+  let maxBoatSpeed = 0;
+
   windSpeeds.forEach((windSpeed, index) => {
     let data = windAngles.map(angle => {
       const entry = polarData[angle]?.[windSpeed];
       const boatSpeed = entry?.boatSpeed;
-      return boatSpeed != null ? [angle, boatSpeed] : null;
+      if (boatSpeed != null) {
+        maxBoatSpeed = Math.max(maxBoatSpeed, boatSpeed);
+        return [angle, boatSpeed];
+      }
+      return null;
     }).filter(Boolean);
 
     if (fullChart) {
@@ -100,10 +106,19 @@ function updateChart(polarData, fullChart = true) {
     });
   });
 
+  // Dynamically update Y-axis range
+  const roundedMax = Math.ceil(maxBoatSpeed + 1);
+  chart.yAxis[0].update({
+    max: roundedMax,
+    tickInterval: roundedMax > 10 ? 2 : 1
+  });
+
+  // Replace all existing series (except live point)
   chart.series.slice(1).forEach(s => s.remove(false));
   seriesData.forEach(s => chart.addSeries(s, false));
   chart.redraw();
 }
+
 
 
 function updateLivePoint(angle, speed) {
