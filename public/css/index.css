@@ -54,6 +54,52 @@ th {
     z-index: 1;
 }
 
+#toggleTableContainer {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    text-align: center;
+    font-size: 1.2em;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 8px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    max-height: 90vh;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+#toggleTableContainer.expanded {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: none;
+    background-color: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 999;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+#tableWrapper {
+    display: none;
+    margin-top: 15px;
+    overflow-x: auto;
+}
+
+#toggleTableContainer.expanded #tableWrapper {
+    display: block;
+}
+
+#polarTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
 #recordControls {
     display: none;
     margin-top: 10px;
@@ -65,10 +111,7 @@ th {
     text-align: center;
 }
 
-#polarTable {
-    display: none;
-    margin: 0 auto;
-}
+
 
 #toggleTableBtn {
     margin-top: 5px;
@@ -77,18 +120,7 @@ th {
     cursor: pointer;
 }
 
-#toggleTableContainer {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    text-align: center;
-    font-size: 1.2em;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 8px;
-    border-radius: 5px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    z-index: 1;
-}
+
 
 #motoringOverlay {
     position: fixed;

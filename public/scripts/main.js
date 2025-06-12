@@ -392,9 +392,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const polarTable = document.getElementById("polarTable");
 
     toggleTableBtn.addEventListener("click", () => {
-        const isVisible = polarTable.style.display !== "none";
-        polarTable.style.display = isVisible ? "none" : "table";
-        toggleTableBtn.textContent = isVisible ? "Show Table" : "Hide Table";
+        const container = document.getElementById("toggleTableContainer");
+        const isExpanded = container.classList.contains("expanded");
+
+        if (isExpanded) {
+            container.classList.remove("expanded");
+            toggleTableBtn.textContent = "Show Table";
+        } else {
+            container.classList.add("expanded");
+            toggleTableBtn.textContent = "Hide Table";
+        }
     });
 
     document.getElementById('exportPolarBtn').addEventListener('click', exportCurrentPolarToCSV);
