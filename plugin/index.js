@@ -91,7 +91,8 @@ module.exports = function (app) {
                 twa: state.liveTWA,
                 tws: state.liveTWS,
                 stw: state.liveSTW
-              }
+              },
+              { event: 'polarUpdated', filePath: state.filePath }
             ];
 
             initMessages.forEach(msg => {

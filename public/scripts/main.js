@@ -153,7 +153,7 @@ function findClosestPolarPoint(twa, tws, polarData) {
                     minDistance = dist;
                     closestTWA = angle;
                     closestTWS = speed;
-                    expectedBoatSpeed = polarData[angle][speed];
+                    expectedBoatSpeed = polarData[angle][speed].boatSpeed;
                 }
             }
         });
@@ -162,21 +162,21 @@ function findClosestPolarPoint(twa, tws, polarData) {
     return { closestTWA, closestTWS, expectedBoatSpeed };
 }
 
-async function fetchLivePerformance() {
-    try {
-        const response = await fetch(`${API_BASE}/live-data`);
-        if (!response.ok) throw new Error('Failed to fetch live performance data');
+// async function fetchLivePerformance() {
+//     try {
+//         const response = await fetch(`${API_BASE}/live-data`);
+//         if (!response.ok) throw new Error('Failed to fetch live performance data');
 
-        const data = await response.json();
-        const twa = parseFloat(data.twa);
-        const tws = parseFloat(data.tws);
-        const stw = parseFloat(data.stw);
+//         const data = await response.json();
+//         const twa = parseFloat(data.twa);
+//         const tws = parseFloat(data.tws);
+//         const stw = parseFloat(data.stw);
 
-        updateLivePerformance(twa, tws, stw);
-    } catch (error) {
-        console.error("Error fetching live performance data:", error);
-    }
-}
+//         updateLivePerformance(twa, tws, stw);
+//     } catch (error) {
+//         console.error("Error fetching live performance data:", error);
+//     }
+// }
 
 function updateLivePerformance(twa, tws, stw) {
     updateLivePoint(twa, stw);
