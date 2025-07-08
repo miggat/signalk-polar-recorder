@@ -4,9 +4,17 @@ const apiRoutes = require('./apiRoutes');
 const recorder = require('./recorder');
 const polarStore = require('./polarStore');
 const WebSocket = require('ws');
+const {
+  isStableCourse,
+  passesVmgRatioFilter,
+  passesAvgSpeedFilter,
+  passesAvgTwaFilter,
+  passesAvgTwsFilter
+} = require('./filters');
+
 
 let unsubscribes = [];
-let state = null;  
+let state = null;
 
 module.exports = function (app) {
   const plugin = {
@@ -18,31 +26,6 @@ module.exports = function (app) {
     start(options) {
 
       app.debug("Plugin start() called with options:", options);
-
-      function changeRecordingStatus(status) {
-        if (status != state.recordingActive) {
-          state.recordingActive = status;
-          state.notifyClients({ event: 'changeRecordStatus', status: status });
-          if (status) {
-            state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
-            state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
-          }
-          app.debug(">>>>>>>>>>>>>>>>>>>> Recording", status);
-        }
-      }
-
-      function evaluateRecordingConditions(validData) {
-        if (state.motoring) {
-          changeRecordingStatus(false);
-          return;
-        }
-
-        if (state.recordingMode === 'auto' && validData) {
-          changeRecordingStatus(true);
-        } else {
-          changeRecordingStatus(false);
-        }
-      }
 
       let localSubscription = {
         context: 'vessels.self',
@@ -71,6 +54,94 @@ module.exports = function (app) {
 
       let courseHistory = [];
       let stwHistory = [];
+      let twaHistory = [];
+      let twsHistory = [];
+
+
+      function changeRecordingStatus(status) {
+        if (status != state.recordingActive) {
+          state.recordingActive = status;
+          state.notifyClients({ event: 'changeRecordStatus', status: status });
+          if (status) {
+            state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
+            state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
+          }
+          app.debug(">>>>>>>>>>>>>>>>>>>> Recording", status);
+        }
+      }
+
+      function evaluateRecordingConditions(validData) {
+        if (state.motoring) {
+          changeRecordingStatus(false);
+          return;
+        }
+
+        if (state.recordingMode === 'auto' && validData) {
+          changeRecordingStatus(true);
+        } else {
+          changeRecordingStatus(false);
+        }
+      }
+
+      function getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory) {
+        const maxAgeMs = sampleInterval * 5;
+        const now = Date.now();
+
+        const twaPath = app.getSelfPath(options.anglePath);
+        const twa = twaPath?.timestamp && now - new Date(twaPath.timestamp).getTime() <= maxAgeMs
+          ? twaPath.value
+          : undefined;
+
+        const twsPath = app.getSelfPath(options.speedPath);
+        const tws = twsPath?.timestamp && now - new Date(twsPath.timestamp).getTime() <= maxAgeMs
+          ? twsPath.value
+          : undefined;
+
+        const stwPath = app.getSelfPath('navigation.speedThroughWater');
+        const stw = stwPath?.timestamp && now - new Date(stwPath.timestamp).getTime() <= maxAgeMs
+          ? stwPath.value
+          : undefined;
+
+        const cogPath = app.getSelfPath('navigation.courseOverGroundTrue');
+        const cog = cogPath?.timestamp && now - new Date(cogPath.timestamp).getTime() <= maxAgeMs
+          ? cogPath.value
+          : undefined;
+
+        if (stw !== undefined) {
+          const windowMs = options.avgSpeedTimeWindow * 1000;
+          stwHistory.push({ time: now, value: stw });
+          stwHistory = stwHistory.filter(entry => entry.time >= now - windowMs);
+        }
+
+        if (cog !== undefined) {
+          const minAge = now - (options.minLenghtValidData * 1000);
+          courseHistory.push({ time: now, angle: cog });
+          courseHistory = courseHistory.filter(entry => entry.time >= minAge);
+        }
+
+        if (twa !== undefined) {
+          const windowMs = options.avgTwaTimeWindow * 1000;
+          twaHistory.push({ time: now, value: twa });
+          twaHistory = twaHistory.filter(entry => entry.time >= now - windowMs);
+        }
+
+        if (tws !== undefined) {
+          const windowMs = options.avgTwsTimeWindow * 1000;
+          twsHistory.push({ time: now, value: tws });
+          twsHistory = twsHistory.filter(entry => entry.time >= now - windowMs);
+        }
+
+        return {
+          twa,
+          tws,
+          stw,
+          cog,
+          twaHistory,
+          twsHistory,
+          stwHistory,
+          courseHistory
+        };
+      }
 
 
       const wss = new WebSocket.Server({ noServer: true });
@@ -173,110 +244,19 @@ module.exports = function (app) {
       }
 
       state.interval = setInterval(() => {
-        const maxAgeMs = (sampleInterval || 1000) * 5;
+        const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory);
+        const { twa, tws, stw, cog } = readings;
+        twaHistory = readings.twaHistory;
+        twsHistory = readings.twsHistory;
+        stwHistory = readings.stwHistory;
+        courseHistory = readings.courseHistory;
 
-        const twaPath = app.getSelfPath(options.anglePath);
-        const twa = twaPath?.timestamp && Date.now() - new Date(twaPath.timestamp).getTime() <= maxAgeMs
-          ? twaPath.value
-          : undefined;
-
-        const twsPath = app.getSelfPath(options.speedPath);
-        const tws = twsPath?.timestamp && Date.now() - new Date(twsPath.timestamp).getTime() <= maxAgeMs
-          ? twsPath.value
-          : undefined;
-
-        const stwPath = app.getSelfPath('navigation.speedThroughWater');
-        const stw = stwPath?.timestamp && Date.now() - new Date(stwPath.timestamp).getTime() <= maxAgeMs
-          ? stwPath.value
-          : undefined;
-
-        const cogPath = app.getSelfPath('navigation.courseOverGroundTrue');
-        const cog = cogPath?.timestamp && Date.now() - new Date(cogPath.timestamp).getTime() <= maxAgeMs
-          ? cogPath.value
-          : undefined;
-
-        const vmgPath = app.getSelfPath(options.vmgPath);
-        const vmg = vmgPath?.timestamp && Date.now() - new Date(vmgPath.timestamp).getTime() <= maxAgeMs
-          ? vmgPath.value
-          : undefined;
-
-        // app.debug(`Raw path values:
-        //   TWA [${options.anglePath}]: ${twa}
-        //   TWS [${options.speedPath}]: ${tws}
-        //   STW [navigation.speedThroughWater]: ${stw}
-        //   COG [navigation.courseOverGroundTrue]: ${cog}
-        // `);
-
-        if (stw !== undefined) {
-          const now = Date.now();
-          stwHistory.push({ time: now, value: stw });
-
-          // Elimina valores antiguos fuera de la ventana de tiempo
-          const windowMs = options.avgSpeedTimeWindow * 1000;
-          stwHistory = stwHistory.filter(entry => entry.time >= now - windowMs);
-        }
-
-
-        if (cog !== undefined) {
-          const now = Date.now();
-          courseHistory.push({ time: now, angle: cog });
-
-          // Remove entries older than minLenghtValidData seconds
-          const minAge = now - (options.minLenghtValidData * 1000);
-          courseHistory = courseHistory.filter(entry => entry.time >= minAge);
-        }
-
-        let stableCourse = false;
-
-        if (courseHistory.length > 0) {
-          const angles = courseHistory.map(e => e.angle);
-          const reference = angles[0];
-          const maxDelta = Math.max(...angles.map(a => Math.abs(a - reference)));
-
-          stableCourse = maxDelta <= options.sameCourseAngleOffset;
-        }
-
-        app.debug("Stable course", stableCourse);
-
-        // ********* VMG FILTER
-        let stwToVmgRatio = null;
-
-        if (stw !== undefined && vmg !== undefined) {
-          if (vmg < 0 && stw > 0) {
-            stwToVmgRatio = 1000;
-          } else if (Math.abs(vmg) > 0.01) {
-            stwToVmgRatio = (stw / vmg);
-          }
-        }
-
-        app.debug('VMG path', options.vmgPath);
-
-        app.debug(`STW=${stw} - VMG=${vmg} || Ratio=${stwToVmgRatio}`);
-
-        const passesVmgFilter = !options.useVmgThreshold ||
-          (stwToVmgRatio !== null &&
-            stwToVmgRatio < options.vmgRatioThresholdUp &&
-            stwToVmgRatio > options.vmgRatioThresholdDown);
-
-
-        // *********** Time window filter
-        let stwAvgRatio = null;
-
-        if (options.useAvgSpeedThreshold && stw !== undefined && stwHistory.length > 0) {
-          const avg = stwHistory.reduce((sum, e) => sum + e.value, 0) / stwHistory.length;
-          if (avg > 0.01) {
-            stwAvgRatio = stw / avg;
-          }
-        }
-
-        const passesAvgSpeedFilter = !options.useAvgSpeedThreshold ||
-          (stwAvgRatio !== null &&
-            stwAvgRatio < options.avgSpeedThresholdUp &&
-            stwAvgRatio > options.avgSpeedThresholdDown);
-
-        if (options.useAvgSpeedThreshold) {
-          app.debug(`STW=${stw} | AVG=${(stwHistory.map(e => e.value).reduce((a, b) => a + b, 0) / stwHistory.length).toFixed(2)} | Ratio=${stwAvgRatio}`);
-        }
+        //*********** Filters
+        const stableCourse = isStableCourse(app, courseHistory, options.sameCourseAngleOffset);
+        const vmgOk = passesVmgRatioFilter(app, stw, twa, tws, state.polarData, options);
+        const avgSpeedOk = passesAvgSpeedFilter(app, stw, stwHistory, options);
+        const avgTwaFilterOk = passesAvgTwaFilter(app, twa, twaHistory, options);
+        const avgTwsFilterOk = passesAvgTwsFilter(app, tws, twsHistory, options);
 
 
         // ********* Check if valid data
@@ -286,8 +266,10 @@ module.exports = function (app) {
           stw !== undefined &&
           cog !== undefined &&
           stableCourse &&
-          passesVmgFilter &&
-          passesAvgSpeedFilter;
+          vmgOk &&
+          avgSpeedOk &&
+          avgTwaFilterOk &&
+          avgTwsFilterOk;
 
 
 

@@ -48,27 +48,20 @@
     },
     "useVmgThreshold": {
       "type": "boolean",
-      "title": "Filter the recorded points by STW to VMG ratio",
-      "description": "Toggle to enable or disable the point filtering based on STW to VMG ratio to detect sudden speed changes.",
+      "title": "Filter the recorded points by current STW to polar recorded ratio",
+      "description": "Toggle to enable or disable the point filtering based on current STW to polar recorded to detect sudden speed changes.",
       "default": true
-    },
-    "vmgPath": {
-      "type": "string",
-      "title": "VMG path",
-      "description": "",
-      "format": "text",
-      "default": "performance.velocityMadeGoodToWaypoint"
     },
     "vmgRatioThresholdUp": {
       "type": "number",
       "title": "Upper threshold for STW to VMG ratio",
-      "description": "",
+      "description": "Ignored if standard deviation is used.",
       "default": 1.1
     },
     "vmgRatioThresholdDown": {
       "type": "number",
       "title": "Lower threshold for STW to VMG ratio",
-      "description": "",
+      "description": "Ignored if standard deviation is used.",
       "default": 0.8
     },
     "useAvgSpeedThreshold": {
@@ -79,21 +72,75 @@
     },
     "avgSpeedTimeWindow": {
       "type": "number",
-      "title": "Time windows (s) ",
-      "description": "Time windows (in seconds) to calculate the average speed",
+      "title": "Speed average time window (s)",
+      "description": "Time window (in seconds) to calculate average speed.",
       "default": 5
     },
     "avgSpeedThresholdUp": {
       "type": "number",
-      "title": "Upper threshold average speed window",
-      "description": "",
+      "title": "Speed filter threshold (z-score or ratio)",
+      "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
       "default": 1.1
     },
     "avgSpeedThresholdDown": {
       "type": "number",
-      "title": "Lower threshold for average speed window",
-      "description": "",
+      "title": "Lower speed ratio threshold",
+      "description": "Ignored if standard deviation is enabled.",
       "default": 0.8
+    },
+    "useAvgTwsThreshold": {
+      "type": "boolean",
+      "title": "Filter by TWS deviation from average",
+      "description": "Enable filtering based on the average True Wind Speed over a time window.",
+      "default": true
+    },
+    "avgTwsTimeWindow": {
+      "type": "number",
+      "title": "TWS average time window (s)",
+      "description": "Time window in seconds to calculate average TWS.",
+      "default": 5
+    },
+    "avgTwsThresholdUp": {
+      "type": "number",
+      "title": "TWS filter threshold (z-score or ratio)",
+      "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
+      "default": 1.1
+    },
+    "avgTwsThresholdDown": {
+      "type": "number",
+      "title": "Lower TWS ratio threshold",
+      "description": "Ignored if standard deviation is enabled.",
+      "default": 0.8
+    },
+    "useAvgTwaThreshold": {
+      "type": "boolean",
+      "title": "Filter by TWA deviation from average",
+      "description": "Enable filtering based on the average True Wind Angle over a time window.",
+      "default": true
+    },
+    "avgTwaTimeWindow": {
+      "type": "number",
+      "title": "TWA average time window (s)",
+      "description": "Time window in seconds to calculate average TWA.",
+      "default": 5
+    },
+    "avgTwaThresholdUp": {
+      "type": "number",
+      "title": "TWA filter threshold (z-score or ratio)",
+      "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
+      "default": 1.1
+    },
+    "avgTwaThresholdDown": {
+      "type": "number",
+      "title": "Lower TWA ratio threshold",
+      "description": "Ignored if standard deviation is enabled.",
+      "default": 0.8
+    },
+    "useStdDev": {
+      "type": "boolean",
+      "title": "Use standard deviation for filters",
+      "description": "If enabled, filters use standard deviation instead of simple average ratio comparisons. The threshold fields act as z-score limits.",
+      "default": true
     }
   }
 }
