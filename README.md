@@ -3,25 +3,25 @@
 
 ## [0.0.13] - 2025-07-08
 
-### ? Added
+### Added
 - New global option: `useStdDev` (boolean, default `true`).
   - When enabled, average-based filters (`STW`, `TWA`, `TWS`) now use **standard deviation (z-score)** logic.
   - Allows outlier detection and better filtering of transient anomalies such as wave-induced speed variations.
 - All average-based filters (e.g. `avgSpeedThresholdUp`, `avgTwaThresholdUp`) support z-score limits when `useStdDev` is active.
 
-### ?? Changed
+### Changed
 - Filters now dynamically switch behavior based on `useStdDev`:
   - If `true`: filters accept values within `± threshold` standard deviations from the mean.
   - If `false`: fallback to ratio comparisons like `current / avg`.
 
-### ?? Affected Filters
+### Affected Filters
 | Signal | Time Window | Enabled By               | Upper Threshold             | Notes                        |
 |--------|-------------|--------------------------|------------------------------|------------------------------|
 | STW    | `avgSpeedTimeWindow` | `useAvgSpeedThreshold` | `avgSpeedThresholdUp`       | Uses z-score or ratio        |
 | TWA    | `avgTwaTimeWindow`   | `useAvgTwaThreshold`   | `avgTwaThresholdUp`         | Uses z-score or ratio        |
 | TWS    | `avgTwsTimeWindow`   | `useAvgTwsThreshold`   | `avgTwsThresholdUp`         | Uses z-score or ratio        |
 
-### ? Example
+###  Example
 ```json
 {
   "useAvgSpeedThreshold": true,
@@ -29,6 +29,7 @@
   "avgSpeedThresholdUp": 2,
   "useStdDev": true
 }
+```
 
 
 ## [0.0.11] - 2025-07-08
