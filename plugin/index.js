@@ -16,6 +16,8 @@ module.exports = function (app) {
 
     start(options) {
 
+      app.debug("Plugin start() called with options:", options);
+
       function changeRecordingStatus(status) {
         if (status != state.recordingActive) {
           state.recordingActive = status;
@@ -169,12 +171,12 @@ module.exports = function (app) {
       state.interval = setInterval(() => {
         const maxAgeMs = (sampleInterval || 1000) * 5;
 
-        const twaPath = app.getSelfPath('environment.wind.angleTrueGround');
+        const twaPath = app.getSelfPath(options.anglePath);
         const twa = twaPath?.timestamp && Date.now() - new Date(twaPath.timestamp).getTime() <= maxAgeMs
           ? twaPath.value
           : undefined;
 
-        const twsPath = app.getSelfPath('environment.wind.speedOverGround');
+        const twsPath = app.getSelfPath(options.speedPath);
         const tws = twsPath?.timestamp && Date.now() - new Date(twsPath.timestamp).getTime() <= maxAgeMs
           ? twsPath.value
           : undefined;
@@ -189,6 +191,13 @@ module.exports = function (app) {
           ? cogPath.value
           : undefined;
 
+
+        app.debug(`Raw path values:
+          TWA [${options.anglePath}]: ${twa}
+          TWS [${options.speedPath}]: ${tws}
+          STW [navigation.speedThroughWater]: ${stw}
+          COG [navigation.courseOverGroundTrue]: ${cog}
+        `);
 
         if (cog !== undefined) {
           const now = Date.now();
@@ -209,8 +218,12 @@ module.exports = function (app) {
           stableCourse = maxDelta <= options.sameCourseAngleOffset;
         }
 
+        app.debug("Stable course", stableCourse);
+
         const validData = twa !== undefined && tws !== undefined && stw !== undefined && cog !== undefined && stableCourse;
 
+        app.debug("Valid data", validData);
+        
         evaluateRecordingConditions(validData);
 
         if (validData) {
