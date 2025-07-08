@@ -15,6 +15,7 @@ const {
 
 let unsubscribes = [];
 let state = null;
+let onUpgradeListener = null;
 
 module.exports = function (app) {
   const plugin = {
@@ -49,7 +50,9 @@ module.exports = function (app) {
         liveTWS: undefined,
         liveSTW: undefined,
         motoring: false,
-        filePath: undefined
+        filePath: undefined,
+        wss: undefined,
+        connectedClients: undefined
       };
 
       let courseHistory = [];
@@ -144,24 +147,23 @@ module.exports = function (app) {
       }
 
 
-      const wss = new WebSocket.Server({ noServer: true });
-      const connectedClients = new Set();
+      state.wss = new WebSocket.Server({ noServer: true });
+      state.connectedClients = new Set();
 
       state.notifyClients = function (message) {
         const payload = JSON.stringify(message);
-        connectedClients.forEach(ws => {
+        state.connectedClients.forEach(ws => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(payload);
           }
         });
       };
 
-      app.server.on('upgrade', (request, socket, head) => {
+      onUpgradeListener = (request, socket, head) => {
         if (request.url === '/plugins/polar-recorder/ws') {
-          wss.handleUpgrade(request, socket, head, ws => {
-            connectedClients.add(ws);
+          state.wss.handleUpgrade(request, socket, head, ws => {
+            state.connectedClients.add(ws);
 
-            // Enviar estado inicial al cliente recién conectado
             const initMessages = [
               { event: 'changeMotoringStatus', engineOn: state.motoring },
               { event: 'changeRecordStatus', status: state.recordingActive },
@@ -184,11 +186,12 @@ module.exports = function (app) {
               }
             });
 
-            ws.on('close', () => connectedClients.delete(ws));
+            ws.on('close', () => state.connectedClients.delete(ws));
           });
         }
-      });
+      };
 
+      app.server.on('upgrade', onUpgradeListener);
 
       app.subscriptionmanager.subscribe(
         localSubscription,
@@ -302,14 +305,45 @@ module.exports = function (app) {
       unsubscribes.forEach(f => f());
       unsubscribes = [];
 
-      if (state.interval) {
+      if (state?.interval) {
         clearInterval(state.interval);
         state.interval = null;
         console.log(">>>>>>>>> Polar Recorder interval cleared <<<<<<<<<<<<<");
       }
 
+      // Cerrar conexiones WebSocket activas
+      if (state?.connectedClients) {
+        state.connectedClients.forEach(ws => {
+          try {
+            if (ws.readyState === ws.OPEN) {
+              ws.close();
+            }
+          } catch (err) {
+            app.error("Error closing WS connection:", err);
+          }
+        });
+        state.connectedClients.clear?.();
+      }
+
+      // Cerrar WebSocket server si está activo
+      if (state?.wss) {
+        try {
+          state.wss.close();
+          console.log(">>>>>>>>> WebSocket server closed <<<<<<<<<<<<<");
+        } catch (err) {
+          app.error("Error closing WebSocket server:", err);
+        }
+      }
+
+      if (onUpgradeListener) {
+        app.server.off('upgrade', onUpgradeListener);
+        onUpgradeListener = null;
+      }
+
+      state = null;
       console.log("Polar Recorder plugin stopped");
     }
+
   };
 
   return plugin;

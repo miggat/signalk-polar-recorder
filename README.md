@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.14] - 2025-07-08
+
+### Fixed
+- **WebSocket reconnection**: Properly allow client websocket reconnection
 
 ## [0.0.13] - 2025-07-08
 
