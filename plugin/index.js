@@ -6,6 +6,7 @@ const polarStore = require('./polarStore');
 const WebSocket = require('ws');
 
 let unsubscribes = [];
+let state = null;  
 
 module.exports = function (app) {
   const plugin = {
@@ -51,8 +52,9 @@ module.exports = function (app) {
         }]
       };
 
-      const state = {
+      state = {
         app,
+        interval: null,
         polarData: {},
         recording: {},
         recordingActive: false,
@@ -68,6 +70,8 @@ module.exports = function (app) {
       };
 
       let courseHistory = [];
+      let stwHistory = [];
+
 
       const wss = new WebSocket.Server({ noServer: true });
       const connectedClients = new Set();
@@ -191,13 +195,27 @@ module.exports = function (app) {
           ? cogPath.value
           : undefined;
 
+        const vmgPath = app.getSelfPath(options.vmgPath);
+        const vmg = vmgPath?.timestamp && Date.now() - new Date(vmgPath.timestamp).getTime() <= maxAgeMs
+          ? vmgPath.value
+          : undefined;
 
-        app.debug(`Raw path values:
-          TWA [${options.anglePath}]: ${twa}
-          TWS [${options.speedPath}]: ${tws}
-          STW [navigation.speedThroughWater]: ${stw}
-          COG [navigation.courseOverGroundTrue]: ${cog}
-        `);
+        // app.debug(`Raw path values:
+        //   TWA [${options.anglePath}]: ${twa}
+        //   TWS [${options.speedPath}]: ${tws}
+        //   STW [navigation.speedThroughWater]: ${stw}
+        //   COG [navigation.courseOverGroundTrue]: ${cog}
+        // `);
+
+        if (stw !== undefined) {
+          const now = Date.now();
+          stwHistory.push({ time: now, value: stw });
+
+          // Elimina valores antiguos fuera de la ventana de tiempo
+          const windowMs = options.avgSpeedTimeWindow * 1000;
+          stwHistory = stwHistory.filter(entry => entry.time >= now - windowMs);
+        }
+
 
         if (cog !== undefined) {
           const now = Date.now();
@@ -220,10 +238,61 @@ module.exports = function (app) {
 
         app.debug("Stable course", stableCourse);
 
-        const validData = twa !== undefined && tws !== undefined && stw !== undefined && cog !== undefined && stableCourse;
+        // ********* VMG FILTER
+        let stwToVmgRatio = null;
+
+        if (stw !== undefined && vmg !== undefined) {
+          if (vmg < 0 && stw > 0) {
+            stwToVmgRatio = 1000;
+          } else if (Math.abs(vmg) > 0.01) {
+            stwToVmgRatio = (stw / vmg);
+          }
+        }
+
+        app.debug('VMG path', options.vmgPath);
+
+        app.debug(`STW=${stw} - VMG=${vmg} || Ratio=${stwToVmgRatio}`);
+
+        const passesVmgFilter = !options.useVmgThreshold ||
+          (stwToVmgRatio !== null &&
+            stwToVmgRatio < options.vmgRatioThresholdUp &&
+            stwToVmgRatio > options.vmgRatioThresholdDown);
+
+
+        // *********** Time window filter
+        let stwAvgRatio = null;
+
+        if (options.useAvgSpeedThreshold && stw !== undefined && stwHistory.length > 0) {
+          const avg = stwHistory.reduce((sum, e) => sum + e.value, 0) / stwHistory.length;
+          if (avg > 0.01) {
+            stwAvgRatio = stw / avg;
+          }
+        }
+
+        const passesAvgSpeedFilter = !options.useAvgSpeedThreshold ||
+          (stwAvgRatio !== null &&
+            stwAvgRatio < options.avgSpeedThresholdUp &&
+            stwAvgRatio > options.avgSpeedThresholdDown);
+
+        if (options.useAvgSpeedThreshold) {
+          app.debug(`STW=${stw} | AVG=${(stwHistory.map(e => e.value).reduce((a, b) => a + b, 0) / stwHistory.length).toFixed(2)} | Ratio=${stwAvgRatio}`);
+        }
+
+
+        // ********* Check if valid data
+        const validData =
+          twa !== undefined &&
+          tws !== undefined &&
+          stw !== undefined &&
+          cog !== undefined &&
+          stableCourse &&
+          passesVmgFilter &&
+          passesAvgSpeedFilter;
+
+
 
         app.debug("Valid data", validData);
-        
+
         evaluateRecordingConditions(validData);
 
         if (validData) {
@@ -250,6 +319,13 @@ module.exports = function (app) {
     stop() {
       unsubscribes.forEach(f => f());
       unsubscribes = [];
+
+      if (state.interval) {
+        clearInterval(state.interval);
+        state.interval = null;
+        console.log(">>>>>>>>> Polar Recorder interval cleared <<<<<<<<<<<<<");
+      }
+
       console.log("Polar Recorder plugin stopped");
     }
   };

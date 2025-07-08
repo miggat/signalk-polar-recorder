@@ -45,6 +45,55 @@
       "description": "",
       "format": "text",
       "default": "environment.wind.speedTrue"
+    },
+    "useVmgThreshold": {
+      "type": "boolean",
+      "title": "Filter the recorded points by STW to VMG ratio",
+      "description": "Toggle to enable or disable the point filtering based on STW to VMG ratio to detect sudden speed changes.",
+      "default": true
+    },
+    "vmgPath": {
+      "type": "string",
+      "title": "VMG path",
+      "description": "",
+      "format": "text",
+      "default": "performance.velocityMadeGoodToWaypoint"
+    },
+    "vmgRatioThresholdUp": {
+      "type": "number",
+      "title": "Upper threshold for STW to VMG ratio",
+      "description": "",
+      "default": 1.1
+    },
+    "vmgRatioThresholdDown": {
+      "type": "number",
+      "title": "Lower threshold for STW to VMG ratio",
+      "description": "",
+      "default": 0.8
+    },
+    "useAvgSpeedThreshold": {
+      "type": "boolean",
+      "title": "Filter the recorded points by deviations from average speed",
+      "description": "Toggle to enable or disable the point filtering based on the average speed in the specified time window to detect sudden speed changes.",
+      "default": true
+    },
+    "avgSpeedTimeWindow": {
+      "type": "number",
+      "title": "Time windows (s) ",
+      "description": "Time windows (in seconds) to calculate the average speed",
+      "default": 5
+    },
+    "avgSpeedThresholdUp": {
+      "type": "number",
+      "title": "Upper threshold average speed window",
+      "description": "",
+      "default": 1.1
+    },
+    "avgSpeedThresholdDown": {
+      "type": "number",
+      "title": "Lower threshold for average speed window",
+      "description": "",
+      "default": 0.8
     }
   }
 }
