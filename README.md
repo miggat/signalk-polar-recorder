@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.17] - 2025-07-09
+
+### Fixed
+- Restored StdDev algoritmh, that was magically removed
+
 ## [0.0.16] - 2025-07-09
 
 ### Added
