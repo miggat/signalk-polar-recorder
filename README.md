@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.16] - 2025-07-09
+
+### Added
+- New TWD stability filter.
+
 ## [0.0.14] - 2025-07-08
 
 ### Fixed

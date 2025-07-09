@@ -1,21 +1,41 @@
-function isStableCourse(app, courseHistory, threshold) {
+const { radToDeg, msToKnots, angleDifferenceDeg } = require('./utils');
+
+
+function isStableCourse(app, courseHistory, thresholdDeg) {
     if (courseHistory.length === 0) return false;
 
-    const angles = courseHistory.map(e => e.angle);
-    const reference = angles[0];
-    const maxDelta = Math.max(...angles.map(a => Math.abs(a - reference)));
+    const anglesDeg = courseHistory.map(e => radToDeg(e.value));
+    const reference = anglesDeg[0];
+    const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
 
-    app.debug("Stable course", maxDelta <= threshold);
+    const stable = maxDelta <= thresholdDeg;
+    app.debug("Stable course", stable);
 
-    return maxDelta <= threshold;
+    return stable;
 }
+
+function isStableTWD(app, twdHistory, thresholdDeg) {
+    app.debug(`Filtering TWD with ${thresholdDeg}º`);
+    if (twdHistory.length === 0) return false;
+
+    app.debug(`Found ${twdHistory.length} elements in the filter`);
+    const anglesDeg = twdHistory.map(e => radToDeg(e.value));
+    const reference = anglesDeg[0];
+    const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
+
+    const stable = maxDelta <= thresholdDeg;
+    app.debug(`Stable TWD ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
+
+    return stable;
+}
+
 
 function passesVmgRatioFilter(app, stwMs, twaRad, twsMs, polarData, options) {
     if (!options.useVmgThreshold) return true;
 
-    const twaDeg = twaRad * 180 / Math.PI;
-    const twsKnots = twsMs * 1.94384;
-    const stwKnots = stwMs * 1.94384;
+    const twaDeg = radToDeg(twaRad);
+    const twsKnots = msToKnots(twsMs);
+    const stwKnots = msToKnots(stwMs);
 
     const { expectedBoatSpeed } = findClosestPolarPoint(Math.abs(twaDeg), twsKnots, polarData);
 
@@ -40,7 +60,7 @@ function passesAvgSpeedFilter(app, stw, stwHistory, options) {
     const avg = stwHistory.reduce((sum, e) => sum + e.value, 0) / stwHistory.length;
     const ratio = avg > 0.01 ? stw / avg : null;
 
-    app.debug(`STW=${stw} | AVG=${avg.toFixed(2)} | Ratio=${ratio}`);
+    app.debug(`AVG STW Filter STW=${stw} | AVG=${avg.toFixed(2)} | Ratio=${ratio}`);
     return (
         ratio !== null &&
         ratio < options.avgSpeedThresholdUp &&
@@ -54,7 +74,7 @@ function passesAvgTwaFilter(app, twa, twaHistory, options) {
     const avg = twaHistory.reduce((sum, e) => sum + e.value, 0) / twaHistory.length;
     const ratio = Math.abs(avg) > 0.01 ? Math.abs(twa) / Math.abs(avg) : null;
 
-    app.debug(`TWA=${twa} | AVG=${avg.toFixed(2)} | Ratio=${ratio}`);
+    app.debug(`AVG TWA Filter TWA=${twa} | AVG=${avg.toFixed(2)} | Ratio=${ratio}`);
     return (
         ratio !== null &&
         ratio < options.avgTwaThresholdUp &&
@@ -68,7 +88,7 @@ function passesAvgTwsFilter(app, tws, twsHistory, options) {
     const avg = twsHistory.reduce((sum, e) => sum + e.value, 0) / twsHistory.length;
     const ratio = avg > 0.01 ? tws / avg : null;
 
-    app.debug(`TWS=${tws} | AVG=${avg.toFixed(2)} | Ratio=${ratio}`);
+    app.debug(`AVG TWS Filter TWS=${tws} | AVG=${avg.toFixed(2)} | Ratio=${ratio}`);
     return (
         ratio !== null &&
         ratio < options.avgTwsThresholdUp &&
@@ -108,6 +128,7 @@ function findClosestPolarPoint(twa, tws, polarData) {
 
 module.exports = {
     isStableCourse,
+    isStableTWD,
     passesVmgRatioFilter,
     passesAvgSpeedFilter,
     passesAvgTwaFilter,

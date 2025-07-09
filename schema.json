@@ -32,6 +32,18 @@
       "description": "",
       "default": 2
     },
+    "minStableTwdTime": {
+      "type": "number",
+      "title": "Minimum time with constant TWD",
+      "description": "The minimum time with the same TWD to consider the values are valid to record.",
+      "default": 5
+    },
+    "sameTwdAngleOffset": {
+      "type": "number",
+      "title": "Accepted TWD variation to consider stable wind direction (degrees)",
+      "description": "",
+      "default": 10
+    },
     "anglePath": {
       "type": "string",
       "title": "Angle path",

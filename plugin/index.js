@@ -6,6 +6,7 @@ const polarStore = require('./polarStore');
 const WebSocket = require('ws');
 const {
   isStableCourse,
+  isStableTWD,
   passesVmgRatioFilter,
   passesAvgSpeedFilter,
   passesAvgTwaFilter,
@@ -59,6 +60,7 @@ module.exports = function (app) {
       let stwHistory = [];
       let twaHistory = [];
       let twsHistory = [];
+      let twdHistory = [];
 
 
       function changeRecordingStatus(status) {
@@ -86,9 +88,9 @@ module.exports = function (app) {
         }
       }
 
-      function getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory) {
-        const maxAgeMs = sampleInterval * 5;
+      function getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, twdHistory) {
         const now = Date.now();
+        const maxAgeMs = sampleInterval * 5;
 
         const twaPath = app.getSelfPath(options.anglePath);
         const twa = twaPath?.timestamp && now - new Date(twaPath.timestamp).getTime() <= maxAgeMs
@@ -110,28 +112,44 @@ module.exports = function (app) {
           ? cogPath.value
           : undefined;
 
+        const twdPath = app.getSelfPath('environment.wind.directionTrue');
+        const twd = twdPath?.timestamp && now - new Date(twdPath.timestamp).getTime() <= maxAgeMs
+          ? twdPath.value
+          : undefined;
+
         if (stw !== undefined) {
           const windowMs = options.avgSpeedTimeWindow * 1000;
           stwHistory.push({ time: now, value: stw });
-          stwHistory = stwHistory.filter(entry => entry.time >= now - windowMs);
+          const filtered = stwHistory.filter(entry => entry.time >= now - windowMs);
+          stwHistory.splice(0, stwHistory.length, ...filtered);
         }
 
         if (cog !== undefined) {
           const minAge = now - (options.minLenghtValidData * 1000);
-          courseHistory.push({ time: now, angle: cog });
-          courseHistory = courseHistory.filter(entry => entry.time >= minAge);
+          courseHistory.push({ time: now, value: cog });
+          const filtered = courseHistory.filter(entry => entry.time >= minAge);
+          courseHistory.splice(0, courseHistory.length, ...filtered);
         }
 
         if (twa !== undefined) {
           const windowMs = options.avgTwaTimeWindow * 1000;
           twaHistory.push({ time: now, value: twa });
-          twaHistory = twaHistory.filter(entry => entry.time >= now - windowMs);
+          const filtered = twaHistory.filter(entry => entry.time >= now - windowMs);
+          twaHistory.splice(0, twaHistory.length, ...filtered);
         }
 
         if (tws !== undefined) {
           const windowMs = options.avgTwsTimeWindow * 1000;
           twsHistory.push({ time: now, value: tws });
-          twsHistory = twsHistory.filter(entry => entry.time >= now - windowMs);
+          const filtered = twsHistory.filter(entry => entry.time >= now - windowMs);
+          twsHistory.splice(0, twsHistory.length, ...filtered);
+        }
+
+        if (twd !== undefined) {
+          const windowMs = options.minStableTwdTime * 1000;
+          twdHistory.push({ time: now, value: twd });
+          const filtered = twdHistory.filter(entry => entry.time >= now - windowMs);
+          twdHistory.splice(0, twdHistory.length, ...filtered);
         }
 
         return {
@@ -139,12 +157,15 @@ module.exports = function (app) {
           tws,
           stw,
           cog,
+          twd,
           twaHistory,
           twsHistory,
           stwHistory,
-          courseHistory
+          courseHistory,
+          twdHistory
         };
       }
+
 
 
       state.wss = new WebSocket.Server({ noServer: true });
@@ -247,15 +268,17 @@ module.exports = function (app) {
       }
 
       state.interval = setInterval(() => {
-        const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory);
-        const { twa, tws, stw, cog } = readings;
-        twaHistory = readings.twaHistory;
-        twsHistory = readings.twsHistory;
-        stwHistory = readings.stwHistory;
-        courseHistory = readings.courseHistory;
+
+        const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, twdHistory);
+        const { twa, tws, stw, cog, twd } = readings;
+
+
 
         //*********** Filters
+        app.debug(`>>> Applying filters <<<`);
+
         const stableCourse = isStableCourse(app, courseHistory, options.sameCourseAngleOffset);
+        const stableTwd = isStableTWD(app, twdHistory, options.sameTwdAngleOffset)
         const vmgOk = passesVmgRatioFilter(app, stw, twa, tws, state.polarData, options);
         const avgSpeedOk = passesAvgSpeedFilter(app, stw, stwHistory, options);
         const avgTwaFilterOk = passesAvgTwaFilter(app, twa, twaHistory, options);
@@ -269,6 +292,7 @@ module.exports = function (app) {
           stw !== undefined &&
           cog !== undefined &&
           stableCourse &&
+          stableTwd &&
           vmgOk &&
           avgSpeedOk &&
           avgTwaFilterOk &&
@@ -276,7 +300,7 @@ module.exports = function (app) {
 
 
 
-        app.debug("Valid data", validData);
+        app.debug(`>>> Valid data ${validData} <<<`);
 
         evaluateRecordingConditions(validData);
 
