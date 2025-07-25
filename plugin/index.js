@@ -24,6 +24,7 @@ module.exports = function (app) {
     name: 'SignalK Polar Recorder',
     description: 'A SignalK plugin to record boat polars based on sailing performance',
     schema: require('../schema.json'),
+    uiSchema: require('../uiSchema.js'),
 
     start(options) {
 
@@ -284,8 +285,8 @@ module.exports = function (app) {
         //*********** Filters
         app.debug(`>>> Applying filters <<<`);
 
-        const stableCourse = isStableCourse(app, courseHistory, options.sameCourseAngleOffset);
-        const stableTwd = isStableTWD(app, twdHistory, options.sameTwdAngleOffset)
+        const stableCourse = isStableCourse(app, courseHistory, options.sameCourseAngleOffset, options);
+        const stableTwd = isStableTWD(app, twdHistory, options.sameTwdAngleOffset, options)
         const vmgOk = passesVmgRatioFilter(app, stw, twa, tws, state.polarData, options);
         const avgSpeedOk = passesAvgSpeedFilter(app, stw, stwHistory, options);
         const avgTwaFilterOk = passesAvgTwaFilter(app, twa, twaHistory, options);
@@ -310,6 +311,7 @@ module.exports = function (app) {
 
         if (!validData) {
           app.debug(`Invalid data due to: ${reasons.join(', ')}`);
+          return;
         }
 
         app.debug(`>>> Valid data ${validData} <<<`);

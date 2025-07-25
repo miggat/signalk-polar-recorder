@@ -20,139 +20,183 @@
       "format": "text",
       "default": "auto-recording-polar.json"
     },
-    "minLenghtValidData": {
-      "type": "number",
-      "title": "Minimum time on course (seconds)",
-      "description": "The minimum time in the same course to consider the values are valid to record.",
-      "default": 5
-    },
-    "sameCourseAngleOffset": {
-      "type": "number",
-      "title": "Accepted course variation to consider stable course (degrees)",
-      "description": "",
-      "default": 2
-    },
-    "minStableTwdTime": {
-      "type": "number",
-      "title": "Minimum time with constant TWD",
-      "description": "The minimum time with the same TWD to consider the values are valid to record.",
-      "default": 5
-    },
-    "sameTwdAngleOffset": {
-      "type": "number",
-      "title": "Accepted TWD variation to consider stable wind direction (degrees)",
-      "description": "",
-      "default": 10
-    },
     "anglePath": {
       "type": "string",
       "title": "Angle path",
-      "description": "",
       "format": "text",
       "default": "environment.wind.angleTrueWater"
     },
     "speedPath": {
       "type": "string",
       "title": "Speed path",
-      "description": "",
       "format": "text",
       "default": "environment.wind.speedTrue"
-    },
-    "useVmgThreshold": {
-      "type": "boolean",
-      "title": "Filter the recorded points by current STW to polar recorded ratio",
-      "description": "Toggle to enable or disable the point filtering based on current STW to polar recorded to detect sudden speed changes.",
-      "default": true
-    },
-    "vmgRatioThresholdUp": {
-      "type": "number",
-      "title": "Upper threshold for STW to VMG ratio",
-      "description": "Ignored if standard deviation is used.",
-      "default": 1.1
-    },
-    "vmgRatioThresholdDown": {
-      "type": "number",
-      "title": "Lower threshold for STW to VMG ratio",
-      "description": "Ignored if standard deviation is used.",
-      "default": 0.8
-    },
-    "useAvgSpeedThreshold": {
-      "type": "boolean",
-      "title": "Filter the recorded points by deviations from average speed",
-      "description": "Toggle to enable or disable the point filtering based on the average speed in the specified time window to detect sudden speed changes.",
-      "default": true
-    },
-    "avgSpeedTimeWindow": {
-      "type": "number",
-      "title": "Speed average time window (s)",
-      "description": "Time window (in seconds) to calculate average speed.",
-      "default": 5
-    },
-    "avgSpeedThresholdUp": {
-      "type": "number",
-      "title": "Speed filter threshold (z-score or ratio)",
-      "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
-      "default": 1.1
-    },
-    "avgSpeedThresholdDown": {
-      "type": "number",
-      "title": "Lower speed ratio threshold",
-      "description": "Ignored if standard deviation is enabled.",
-      "default": 0.8
-    },
-    "useAvgTwsThreshold": {
-      "type": "boolean",
-      "title": "Filter by TWS deviation from average",
-      "description": "Enable filtering based on the average True Wind Speed over a time window.",
-      "default": true
-    },
-    "avgTwsTimeWindow": {
-      "type": "number",
-      "title": "TWS average time window (s)",
-      "description": "Time window in seconds to calculate average TWS.",
-      "default": 5
-    },
-    "avgTwsThresholdUp": {
-      "type": "number",
-      "title": "TWS filter threshold (z-score or ratio)",
-      "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
-      "default": 1.1
-    },
-    "avgTwsThresholdDown": {
-      "type": "number",
-      "title": "Lower TWS ratio threshold",
-      "description": "Ignored if standard deviation is enabled.",
-      "default": 0.8
-    },
-    "useAvgTwaThreshold": {
-      "type": "boolean",
-      "title": "Filter by TWA deviation from average",
-      "description": "Enable filtering based on the average True Wind Angle over a time window.",
-      "default": true
-    },
-    "avgTwaTimeWindow": {
-      "type": "number",
-      "title": "TWA average time window (s)",
-      "description": "Time window in seconds to calculate average TWA.",
-      "default": 5
-    },
-    "avgTwaThresholdUp": {
-      "type": "number",
-      "title": "TWA filter threshold (z-score or ratio)",
-      "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
-      "default": 1.1
-    },
-    "avgTwaThresholdDown": {
-      "type": "number",
-      "title": "Lower TWA ratio threshold",
-      "description": "Ignored if standard deviation is enabled.",
-      "default": 0.8
     },
     "useStdDev": {
       "type": "boolean",
       "title": "Use standard deviation for filters",
       "description": "If enabled, filters use standard deviation instead of simple average ratio comparisons. The threshold fields act as z-score limits.",
       "default": true
+    },
+    "cogFilter": {
+      "type": "object",
+      "title": "COG Filter",
+      "properties": {
+        "useCogThreshold": {
+          "type": "boolean",
+          "title": "Filter the recorded points by COG stability",
+          "description": "Toggle to enable or disable the point filtering based on COG stability.",
+          "default": true
+        },
+        "minLenghtValidData": {
+          "type": "number",
+          "title": "Minimum time on course (seconds)",
+          "description": "The minimum time in the same course to consider the values are valid to record.",
+          "default": 5
+        },
+        "sameCourseAngleOffset": {
+          "type": "number",
+          "title": "Accepted course variation to consider stable course (degrees)",
+          "default": 2
+        }
+      }
+    },
+    "twdFilter": {
+      "type": "object",
+      "title": "TWD Filter",
+      "properties": {
+        "useTwdThreshold": {
+          "type": "boolean",
+          "title": "Filter the recorded points by TWD stability",
+          "description": "Toggle to enable or disable the point filtering based on TWD stability.",
+          "default": true
+        },
+        "minStableTwdTime": {
+          "type": "number",
+          "title": "Minimum time with constant TWD",
+          "description": "The minimum time with the same TWD to consider the values are valid to record.",
+          "default": 5
+        },
+        "sameTwdAngleOffset": {
+          "type": "number",
+          "title": "Accepted TWD variation to consider stable wind direction (degrees)",
+          "default": 10
+        }
+      }
+    },
+    "vmgFilter": {
+      "type": "object",
+      "title": "VMG Filter",
+      "properties": {
+        "useVmgThreshold": {
+          "type": "boolean",
+          "title": "Filter the recorded points by current STW to polar recorded ratio",
+          "description": "Toggle to enable or disable the point filtering based on current STW to polar recorded to detect sudden speed changes.",
+          "default": true
+        },
+        "vmgRatioThresholdUp": {
+          "type": "number",
+          "title": "Upper threshold for STW to VMG ratio",
+          "description": "Ignored if standard deviation is used.",
+          "default": 1.1
+        },
+        "vmgRatioThresholdDown": {
+          "type": "number",
+          "title": "Lower threshold for STW to VMG ratio",
+          "description": "Ignored if standard deviation is used.",
+          "default": 0.8
+        }
+      }
+    },
+    "speedFilter": {
+      "type": "object",
+      "title": "Speed Filter",
+      "properties": {
+        "useAvgSpeedThreshold": {
+          "type": "boolean",
+          "title": "Filter the recorded points by deviations from average speed",
+          "description": "Toggle to enable or disable the point filtering based on the average speed in the specified time window to detect sudden speed changes.",
+          "default": true
+        },
+        "avgSpeedTimeWindow": {
+          "type": "number",
+          "title": "Speed average time window (s)",
+          "description": "Time window (in seconds) to calculate average speed.",
+          "default": 5
+        },
+        "avgSpeedThresholdUp": {
+          "type": "number",
+          "title": "Speed filter threshold (z-score or ratio)",
+          "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
+          "default": 1.1
+        },
+        "avgSpeedThresholdDown": {
+          "type": "number",
+          "title": "Lower speed ratio threshold",
+          "description": "Ignored if standard deviation is enabled.",
+          "default": 0.8
+        }
+      }
+    },
+    "twsFilter": {
+      "type": "object",
+      "title": "TWS Filter",
+      "properties": {
+        "useAvgTwsThreshold": {
+          "type": "boolean",
+          "title": "Filter by TWS deviation from average",
+          "description": "Enable filtering based on the average True Wind Speed over a time window.",
+          "default": true
+        },
+        "avgTwsTimeWindow": {
+          "type": "number",
+          "title": "TWS average time window (s)",
+          "description": "Time window in seconds to calculate average TWS.",
+          "default": 5
+        },
+        "avgTwsThresholdUp": {
+          "type": "number",
+          "title": "TWS filter threshold (z-score or ratio)",
+          "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
+          "default": 1.1
+        },
+        "avgTwsThresholdDown": {
+          "type": "number",
+          "title": "Lower TWS ratio threshold",
+          "description": "Ignored if standard deviation is enabled.",
+          "default": 0.8
+        }
+      }
+    },
+    "twaFilter": {
+      "type": "object",
+      "title": "TWA Filter",
+      "properties": {
+        "useAvgTwaThreshold": {
+          "type": "boolean",
+          "title": "Filter by TWA deviation from average",
+          "description": "Enable filtering based on the average True Wind Angle over a time window.",
+          "default": true
+        },
+        "avgTwaTimeWindow": {
+          "type": "number",
+          "title": "TWA average time window (s)",
+          "description": "Time window in seconds to calculate average TWA.",
+          "default": 5
+        },
+        "avgTwaThresholdUp": {
+          "type": "number",
+          "title": "TWA filter threshold (z-score or ratio)",
+          "description": "If standard deviation is enabled, this is the maximum allowed z-score. Otherwise, it's the upper ratio threshold.",
+          "default": 1.1
+        },
+        "avgTwaThresholdDown": {
+          "type": "number",
+          "title": "Lower TWA ratio threshold",
+          "description": "Ignored if standard deviation is enabled.",
+          "default": 0.8
+        }
+      }
     }
   }
 }

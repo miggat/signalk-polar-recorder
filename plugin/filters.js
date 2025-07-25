@@ -11,7 +11,9 @@ function standardDeviation(values) {
     return Math.sqrt(variance);
 }
 
-function isStableCourse(app, courseHistory, thresholdDeg) {
+function isStableCourse(app, courseHistory, thresholdDeg, options) {
+    if (!options.useCogThreshold) return true;
+
     if (courseHistory.length === 0) return false;
 
     const anglesDeg = courseHistory.map(e => radToDeg(e.value));
@@ -24,7 +26,9 @@ function isStableCourse(app, courseHistory, thresholdDeg) {
     return stable;
 }
 
-function isStableTWD(app, twdHistory, thresholdDeg) {
+function isStableTWD(app, twdHistory, thresholdDeg, options) {
+    if (!options.useTwdThreshold) return true;
+
     app.debug(`Filtering TWD with ${thresholdDeg}º`);
     if (twdHistory.length === 0) return false;
 
