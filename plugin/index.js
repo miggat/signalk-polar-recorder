@@ -248,8 +248,15 @@ module.exports = function (app) {
       const sampleInterval = options.sampleInterval || 1000;
       const dataDir = app.getDataDirPath();
       const polarDataFile = path.join(dataDir, 'polar-data.json');
-      const automaticRecordingFile = path.join(dataDir, options.automaticRecordingFile ?? 'auto-recording-polar.json');
+      const rawPath = options.automaticRecordingFile ?? 'auto-recording-polar.json';
 
+      let automaticRecordingFile;
+      if (path.isAbsolute(rawPath)) {
+        // Si no termina en .json, lo añadimos
+        automaticRecordingFile = rawPath.endsWith('.json') ? rawPath : `${rawPath}.json`;
+      } else {
+        automaticRecordingFile = path.join(dataDir, rawPath);
+      }
 
       app.debug("Polar Recorder plugin data dir:", dataDir);
 
@@ -286,19 +293,24 @@ module.exports = function (app) {
 
 
         // ********* Check if valid data
-        const validData =
-          twa !== undefined &&
-          tws !== undefined &&
-          stw !== undefined &&
-          cog !== undefined &&
-          stableCourse &&
-          stableTwd &&
-          vmgOk &&
-          avgSpeedOk &&
-          avgTwaFilterOk &&
-          avgTwsFilterOk;
+        const reasons = [];
 
+        if (twa === undefined) reasons.push('twa undefined');
+        if (tws === undefined) reasons.push('tws undefined');
+        if (stw === undefined) reasons.push('stw undefined');
+        if (cog === undefined) reasons.push('cog undefined');
+        if (!stableCourse) reasons.push('unstable course');
+        if (!stableTwd) reasons.push('unstable TWD');
+        if (!vmgOk) reasons.push('VMG ratio filter failed');
+        if (!avgSpeedOk) reasons.push('average speed filter failed');
+        if (!avgTwaFilterOk) reasons.push('average TWA filter failed');
+        if (!avgTwsFilterOk) reasons.push('average TWS filter failed');
 
+        const validData = reasons.length === 0;
+
+        if (!validData) {
+          app.debug(`Invalid data due to: ${reasons.join(', ')}`);
+        }
 
         app.debug(`>>> Valid data ${validData} <<<`);
 

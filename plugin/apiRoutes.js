@@ -102,6 +102,7 @@ module.exports = function (app, state) {
     try {
       fs.writeFileSync(fullPath, '{}');  // create empty polar
       res.json({ success: true, message: `File ${fileName} created.` });
+      app.debug(`Created new polar file: ${fullPath}`);
     } catch (err) {
       res.status(500).json({ error: 'Failed to create file' });
     }

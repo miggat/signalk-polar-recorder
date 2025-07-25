@@ -381,9 +381,6 @@ function stopRecording(save) {
 initChart(showFullChart);
 // Init
 fetchPolarFiles();
-// fetchMotoringStatus();
-// fetchRecordingStatus();
-// fetchLivePerformance();
 // Initial connection
 connectWebSocket();
 
@@ -424,40 +421,40 @@ document.addEventListener("DOMContentLoaded", () => {
         fetchPolarData(selectedPolarFile);
     });
 
-    // document.getElementById('recordPolarBtn').addEventListener('click', () => {
-    //     startRecording(selectedPolarFile);
-    // });
+    document.getElementById('recordPolarBtn').addEventListener('click', () => {
+        startRecording(selectedPolarFile);
+    });
 
-    // document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
-    // document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
+    document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
+    document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
 
-    // document.getElementById('newPolarBtn').addEventListener('click', async () => {
-    //     let filename = prompt("Enter new polar file name:");
-    //     if (!filename || filename.trim() === "") {
-    //         const now = new Date();
-    //         const y = now.getFullYear();
-    //         const m = String(now.getMonth() + 1).padStart(2, '0');
-    //         const d = String(now.getDate()).padStart(2, '0');
-    //         const h = String(now.getHours()).padStart(2, '0');
-    //         const min = String(now.getMinutes()).padStart(2, '0');
-    //         filename = `Polar-${y}${m}${d}_${h}${min}.json`;
-    //     } else if (!filename.endsWith(".json")) {
-    //         filename += ".json";
-    //     }
+    document.getElementById('newPolarBtn').addEventListener('click', async () => {
+        let filename = prompt("Enter new polar file name:");
+        if (!filename || filename.trim() === "") {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const h = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            filename = `Polar-${y}${m}${d}_${h}${min}.json`;
+        } else if (!filename.endsWith(".json")) {
+            filename += ".json";
+        }
 
-    //     try {
-    //         const response = await fetch(`${API_BASE}/create-polar-file`, {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({ fileName: filename })
-    //         });
+        try {
+            const response = await fetch(`${API_BASE}/create-polar-file`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: filename })
+            });
 
-    //         if (!response.ok) throw new Error("Failed to create file");
-    //         await fetchPolarFiles(filename);
-    //     } catch (error) {
-    //         alert("Error creating polar file: " + error.message);
-    //     }
-    // });
+            if (!response.ok) throw new Error("Failed to create file");
+            await fetchPolarFiles(filename);
+        } catch (error) {
+            alert("Error creating polar file: " + error.message);
+        }
+    });
 
     fetchPolarFiles().then(() => {
         const select = document.getElementById('polarFileSelect');

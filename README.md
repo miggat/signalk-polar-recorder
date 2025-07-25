@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.18] - 2025-07-09
+
+### Fixed
+
+- Support for absolute path for auto-recording file
+
+
 ## [0.0.17] - 2025-07-09
 
 ### Fixed
