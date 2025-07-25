@@ -30,15 +30,24 @@ function update(state, filePath) {
   const existing = polarData[twa]?.[tws];
   const newEntry = { boatSpeed, timestamp: now };
 
+  if (existing) {
+    state.app.debug(`Before update: Recorded: ${existing} | Recorded STW: ${existing.boatSpeed} | Current STW: ${boatSpeed}`);
+  }
+  else {
+    state.app.debug(`No existing point found`);
+  }
+
   let updated = false;
   if (!existing || boatSpeed > existing.boatSpeed) {
     if (!polarData[twa]) polarData[twa] = {};
     polarData[twa][tws] = newEntry;
     updated = true;
 
+    state.app.debug(`Updated in memory ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);
+
     try {
       fs.writeFileSync(filePath, JSON.stringify(polarData, null, 2));
-      state.app.debug(`Recorded ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);
+      state.app.debug(`Recorded (${filePath}) ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);
     } catch (err) {
       state.app.error("Error saving polar file:", err);
     }

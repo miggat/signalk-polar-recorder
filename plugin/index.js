@@ -82,10 +82,19 @@ module.exports = function (app) {
           return;
         }
 
-        if (state.recordingMode === 'auto' && validData) {
-          changeRecordingStatus(true);
-        } else {
+        if (validData) {
+          if (state.recordingMode === 'auto') {
+            changeRecordingStatus(true);
+            return;
+          }
+          if (state.recordingMode === 'manual' && state.recordingActive) {
+            changeRecordingStatus(true);
+            return;
+          }
+        }
+        else {
           changeRecordingStatus(false);
+          return;
         }
       }
 
@@ -326,6 +335,7 @@ module.exports = function (app) {
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
 
           if (!state.motoring && state.recordingActive) {
+            app.debug('>>> Should update <<<');
             state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
             const updated = recorder.update(state, state.filePath);
             if (updated) {

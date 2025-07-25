@@ -23,22 +23,42 @@ module.exports = function (app, state) {
       res.status(500).json({ error: 'Failed to list polar files' });
     }
   });
-  
+
   app.post(`${API_BASE}/start-recording`, (req, res) => {
-    state.recording = req.body?.mode === 'incremental' ? state.recording : {};
+    if (state.recordingActive) {
+      return res.json({ success: false, message: 'Recording is already active.' });
+    }
+
+    const polarFile = req.body?.polarFile;
+
+    state.recordingMode = "manual";
+    state.polarDataFile = path.join(app.getDataDirPath(), polarFile);
+    state.recording = state.polarDataFile ? polarStore.load(state.polarDataFile) : state.polarData;
     state.recordingActive = true;
+
     res.json({ success: true });
   });
 
+
   app.post(`${API_BASE}/stop-recording`, (req, res) => {
-    state.recordingActive = false;
-    if (req.body?.save) {
-      const ts = new Date().toISOString().replace(/[-:T]/g, '').split('.')[0];
-      const file = path.join(app.getDataDirPath(), `polar-${ts}.json`);
-      fs.writeFileSync(file, JSON.stringify(state.recording, null, 2));
-      res.json({ success: true, message: `Saved as ${path.basename(file)}` });
-    } else {
+    try {
+      state.recordingActive = false;
+
+      if (req.body?.save) {
+        const file = state.polarDataFile;
+
+        if (!file || typeof file !== 'string') {
+          return res.status(400).json({ success: false, message: 'Invalid or missing polarDataFile' });
+        }
+
+        // fs.writeFileSync(file, JSON.stringify(state.recording, null, 2));
+        return res.json({ success: true, message: `Recording saved to ${path.basename(file)}` });
+      }
+
       res.json({ success: true, message: 'Recording discarded' });
+    } catch (err) {
+      app.error("Failed to save polar data:", err);
+      res.status(500).json({ success: false, message: 'Error saving recording data' });
     }
   });
 

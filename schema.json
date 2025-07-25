@@ -110,11 +110,11 @@
     },
     "speedFilter": {
       "type": "object",
-      "title": "Speed Filter",
+      "title": "STW Filter",
       "properties": {
         "useAvgSpeedThreshold": {
           "type": "boolean",
-          "title": "Filter the recorded points by deviations from average speed",
+          "title": "Filter the recorded points by deviations from average STW",
           "description": "Toggle to enable or disable the point filtering based on the average speed in the specified time window to detect sudden speed changes.",
           "default": true
         },

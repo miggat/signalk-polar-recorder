@@ -354,27 +354,47 @@ async function importPolarFile(file) {
     reader.readAsText(file);
 }
 
-function startRecording(polarFile) {
-    fetch(`${API_BASE}/start-recording`, {
+async function startRecording(polarFile) {
+    const response = await fetch(`${API_BASE}/start-recording`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ polarFile })
     });
-    document.getElementById('recordControls').style.display = 'block';
+
+    const result = await response.json();
+
+    if (result.success) {
+        document.getElementById('recordControls').style.display = 'block';
+    } else if (result.message) {
+        alert(result.message);
+    }
 }
 
-function stopRecording(save) {
-    fetch(`${API_BASE}/stop-recording`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ save })
-    }).then(() => {
-        if (polarFiles.length > 0) {
-            fetchPolarData(polarFiles[0]);
-        }
-    });
 
-    document.getElementById('recordControls').style.display = 'none';
+async function stopRecording(save) {
+    try {
+        const response = await fetch(`${API_BASE}/stop-recording`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ save })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            alert(result.message || 'Failed to stop recording.');
+        } else {
+            alert(result.message);
+            if (selectedPolarFile) {
+                fetchPolarData(selectedPolarFile); // 👈 recarga para mostrar los nuevos datos
+            }
+        }
+
+        document.getElementById('recordControls').style.display = 'none';
+    } catch (err) {
+        console.error('Error stopping recording:', err);
+        alert('Unexpected error stopping recording');
+    }
 }
 
 // Init chart
@@ -422,11 +442,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById('recordPolarBtn').addEventListener('click', () => {
+        console.log(`Start recording in ${selectedPolarFile}`);
         startRecording(selectedPolarFile);
     });
 
     document.getElementById('stopSaveBtn').addEventListener('click', () => stopRecording(true));
-    document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
+    // document.getElementById('stopCancelBtn').addEventListener('click', () => stopRecording(false));
 
     document.getElementById('newPolarBtn').addEventListener('click', async () => {
         let filename = prompt("Enter new polar file name:");

@@ -6,6 +6,11 @@
 
 - Support for absolute path for auto-recording file
 
+### Changed
+
+- Improved admin UI
+- COG and TWD stability are now optional
+- Manual recording has been completely rewritten
 
 ## [0.0.17] - 2025-07-09
 
