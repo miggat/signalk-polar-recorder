@@ -43,8 +43,6 @@ function update(state, filePath) {
     polarData[twa][tws] = newEntry;
     updated = true;
 
-    state.app.debug(`Updated in memory ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);
-
     try {
       fs.writeFileSync(filePath, JSON.stringify(polarData, null, 2));
       state.app.debug(`Recorded (${filePath}) ${boatSpeed.toFixed(2)}kt at TWA ${twa}° / TWS ${tws}kt`);

@@ -1,4 +1,7 @@
 module.exports = {
+  motoringFilter: {
+    classNames: "border rounded p-3 mb-3 bg-light"
+  },
   cogFilter: {
     classNames: "border rounded p-3 mb-3 bg-light"
   },

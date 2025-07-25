@@ -11,6 +11,7 @@
 - Improved admin UI
 - COG and TWD stability are now optional
 - Manual recording has been completely rewritten
+- Now you can chose to detect if motoring either with signalk-autostate or by max rev.
 
 ## [0.0.17] - 2025-07-09
 

@@ -38,6 +38,24 @@
       "description": "If enabled, filters use standard deviation instead of simple average ratio comparisons. The threshold fields act as z-score limits.",
       "default": true
     },
+    "motoringFilter": {
+      "type": "object",
+      "title": "Motoring Filter",
+      "properties": {
+        "useAutostate": {
+          "type": "boolean",
+          "title": "Use signalk-autostate to detect if engines are on",
+          "description":"If enabled, the plugin will use signalk-autostate to detect if motoring, to disable the polar recording. If disabled, the plugin will record if engine revs are under 'Max revs'",
+          "default": true
+        },
+        "maxRevForEngine": {
+          "type": "integer",
+          "title":"Max revs",
+          "description": "Max revolutions to consider the engine is off",
+          "default": 0
+        }
+      }
+    },
     "cogFilter": {
       "type": "object",
       "title": "COG Filter",

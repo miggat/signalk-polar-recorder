@@ -235,21 +235,36 @@ module.exports = function (app) {
             const selfProp = app.getSelfPath('propulsion');
             const instances = Object.keys(selfProp || {});
 
-            let engineOn = instances.some(name => {
-              const stateVal = app.getSelfPath(`propulsion.${name}.state`)?.value;
-              const rev = app.getSelfPath(`propulsion.${name}.revolutions`)?.value;
-              return stateVal !== 'stopped' || (typeof rev === 'number' && rev > 0);
-            });
+            let engineOn;
+
+            if (options.motoringFilter.useAutostate ?? true) {
+              // ✅ Comportamiento actual
+              engineOn = instances.some(name => {
+                const stateVal = app.getSelfPath(`propulsion.${name}.state`)?.value;
+                const rev = app.getSelfPath(`propulsion.${name}.revolutions`)?.value;
+                return stateVal !== 'stopped' || (typeof rev === 'number' && rev > 0);
+              });
+            } else {
+              // ⚙️ Evaluación alternativa basada solo en revoluciones
+              const maxRev = options.motoringFilter.maxRevForEngine ?? 0;
+              const maxRevHz = maxRev / 60;
+              engineOn = instances.some(name => {
+                const rev = app.getSelfPath(`propulsion.${name}.revolutions`)?.value;
+                return typeof rev === 'number' && rev > maxRevHz;
+              });
+            }
+
+            //app.debug(`Engine ON=${engineOn} (maxRevsForEngine=${options.motoringFilter.maxRevForEngine}) (useAutoState=${options.motoringFilter.useAutostate})`);
 
             if (engineOn !== state.motoring) {
               state.motoring = engineOn;
               app.debug(`Motoring: ${state.motoring}`);
 
               evaluateRecordingConditions(true);
-
               state.notifyClients({ event: 'changeMotoringStatus', engineOn });
             }
           });
+
         }
       );
 
