@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.19] - 2025-08-03
+
+### Changed
+
+- Added HDG stability filter
+- Now each path can be setup with each own source
+- Improvements on filter efficiency
+
 ## [0.0.18] - 2025-07-09
 
 ### Fixed

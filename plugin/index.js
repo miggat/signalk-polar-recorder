@@ -6,6 +6,7 @@ const polarStore = require('./polarStore');
 const WebSocket = require('ws');
 const {
   isStableCourse,
+  isStableHdg,
   isStableTWD,
   passesVmgRatioFilter,
   passesAvgSpeedFilter,
@@ -58,6 +59,7 @@ module.exports = function (app) {
       };
 
       let courseHistory = [];
+      let headingHistory = [];
       let stwHistory = [];
       let twaHistory = [];
       let twsHistory = [];
@@ -98,34 +100,58 @@ module.exports = function (app) {
         }
       }
 
-      function getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, twdHistory) {
+
+      function getValidValue(pathObj, expectedSource, now, maxAgeMs) {
+        //app.debug(`Get valid data with: pathObj: : ${JSON.stringify(pathObj)}; expectedSource: ${expectedSource}; now: ${now}; maxAgeMS: ${maxAgeMs}`);
+        if (!pathObj) return undefined;
+
+        if (!expectedSource) {
+          const ts = new Date(pathObj.timestamp).getTime();
+          return now - ts <= maxAgeMs ? pathObj.value : undefined;
+        }
+
+        // Buscar en .values[expectedSource]
+        const entry = pathObj.values?.[expectedSource];
+        if (entry) {
+          const ts = new Date(entry.timestamp).getTime();
+          return now - ts <= maxAgeMs ? entry.value : undefined;
+        }
+
+        // Si no está en .values, comprobar si el source principal coincide
+        const mainSource = pathObj.$source?.replace(/^\$/, '');
+        if (mainSource === expectedSource) {
+          const ts = new Date(pathObj.timestamp).getTime();
+          return now - ts <= maxAgeMs ? pathObj.value : undefined;
+        }
+
+        // No hay valor válido del source esperado
+        return undefined;
+      }
+
+
+
+      function getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, headingHistory, twdHistory) {
         const now = Date.now();
         const maxAgeMs = sampleInterval * 5;
 
-        const twaPath = app.getSelfPath(options.anglePath);
-        const twa = twaPath?.timestamp && now - new Date(twaPath.timestamp).getTime() <= maxAgeMs
-          ? twaPath.value
-          : undefined;
+        const twaPath = app.getSelfPath(options.pathSources.anglePath);
+        const twa = getValidValue(twaPath, options.pathSources.angleSource, now, maxAgeMs);
 
-        const twsPath = app.getSelfPath(options.speedPath);
-        const tws = twsPath?.timestamp && now - new Date(twsPath.timestamp).getTime() <= maxAgeMs
-          ? twsPath.value
-          : undefined;
-
-        const stwPath = app.getSelfPath('navigation.speedThroughWater');
-        const stw = stwPath?.timestamp && now - new Date(stwPath.timestamp).getTime() <= maxAgeMs
-          ? stwPath.value
-          : undefined;
-
-        const cogPath = app.getSelfPath('navigation.courseOverGroundTrue');
-        const cog = cogPath?.timestamp && now - new Date(cogPath.timestamp).getTime() <= maxAgeMs
-          ? cogPath.value
-          : undefined;
+        const twsPath = app.getSelfPath(options.pathSources.speedPath);
+        const tws = getValidValue(twsPath, options.pathSources.speedSource, now, maxAgeMs);
 
         const twdPath = app.getSelfPath('environment.wind.directionTrue');
-        const twd = twdPath?.timestamp && now - new Date(twdPath.timestamp).getTime() <= maxAgeMs
-          ? twdPath.value
-          : undefined;
+        const twd = getValidValue(twdPath, options.pathSources.twdSource, now, maxAgeMs);
+
+        const stwPath = app.getSelfPath('navigation.speedThroughWater');
+        const stw = getValidValue(stwPath, options.pathSources.stwSource, now, maxAgeMs);
+
+        const cogPath = app.getSelfPath('navigation.courseOverGroundTrue');
+        const cog = getValidValue(cogPath, options.pathSources.cogSource, now, maxAgeMs);
+
+        const hdgPath = app.getSelfPath('navigation.headingTrue');
+        const hdg = getValidValue(hdgPath, options.pathSources.hdgSource, now, maxAgeMs);
+
 
         if (stw !== undefined) {
           const windowMs = options.avgSpeedTimeWindow * 1000;
@@ -140,6 +166,14 @@ module.exports = function (app) {
           const filtered = courseHistory.filter(entry => entry.time >= minAge);
           courseHistory.splice(0, courseHistory.length, ...filtered);
         }
+
+        if (hdg !== undefined) {
+          const minAge = now - (options.minLenghtValidData * 1000);
+          headingHistory.push({ time: now, value: hdg });
+          const filtered = headingHistory.filter(entry => entry.time >= minAge);
+          headingHistory.splice(0, headingHistory.length, ...filtered);
+        }
+
 
         if (twa !== undefined) {
           const windowMs = options.avgTwaTimeWindow * 1000;
@@ -172,6 +206,7 @@ module.exports = function (app) {
           twsHistory,
           stwHistory,
           courseHistory,
+          headingHistory,
           twdHistory
         };
       }
@@ -301,7 +336,7 @@ module.exports = function (app) {
 
       state.interval = setInterval(() => {
 
-        const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, twdHistory);
+        const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, headingHistory, twdHistory);
         const { twa, tws, stw, cog, twd } = readings;
 
 
@@ -309,8 +344,10 @@ module.exports = function (app) {
         //*********** Filters
         app.debug(`>>> Applying filters <<<`);
 
-        const stableCourse = isStableCourse(app, courseHistory, options.sameCourseAngleOffset, options);
-        const stableTwd = isStableTWD(app, twdHistory, options.sameTwdAngleOffset, options)
+        const stableCourse = isStableCourse(app, courseHistory, options);
+        const stableHdg = isStableHdg(app, headingHistory, options);
+        const stableTwd = isStableTWD(app, twdHistory, options);
+
         const vmgOk = passesVmgRatioFilter(app, stw, twa, tws, state.polarData, options);
         const avgSpeedOk = passesAvgSpeedFilter(app, stw, stwHistory, options);
         const avgTwaFilterOk = passesAvgTwaFilter(app, twa, twaHistory, options);
@@ -324,7 +361,9 @@ module.exports = function (app) {
         if (tws === undefined) reasons.push('tws undefined');
         if (stw === undefined) reasons.push('stw undefined');
         if (cog === undefined) reasons.push('cog undefined');
+        if (twd === undefined) reasons.push('twd undefined');
         if (!stableCourse) reasons.push('unstable course');
+        if (!stableHdg) reasons.push('unstable heading');
         if (!stableTwd) reasons.push('unstable TWD');
         if (!vmgOk) reasons.push('VMG ratio filter failed');
         if (!avgSpeedOk) reasons.push('average speed filter failed');

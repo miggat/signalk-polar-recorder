@@ -9,24 +9,42 @@ function standardDeviation(values) {
     return Math.sqrt(mean(values.map(v => (v - avg) ** 2)));
 }
 
-function isStableCourse(app, courseHistory, thresholdDeg, options) {
-    if (!options.cogFilter.useCogThreshold) return true;
+function isStableCourse(app, courseHistory, options) {
+    if (!options?.cogFilter?.useCogThreshold) return true;
     if (courseHistory.length === 0) return false;
 
+    const thresholdDeg = options.cogFilter.sameCourseAngleOffset;
     const anglesDeg = courseHistory.map(e => radToDeg(e.value));
     const reference = anglesDeg[0];
     const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
 
     const stable = maxDelta <= thresholdDeg;
-    app.debug("Stable course", stable);
+    app.debug(`Stable course ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
 
     return stable;
 }
 
-function isStableTWD(app, twdHistory, thresholdDeg, options) {
-    if (!options.twdFilter.useTwdThreshold) return true;
+
+function isStableHdg(app, headingHistory, options) {
+    if (!options?.hdgFilter?.useHdgThreshold) return true;
+    if (headingHistory.length === 0) return false;
+
+    const thresholdDeg = options.hdgFilter.sameCourseAngleOffset;
+    const anglesDeg = headingHistory.map(e => radToDeg(e.value));
+    const reference = anglesDeg[0];
+    const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
+
+    const stable = maxDelta <= thresholdDeg;
+    app.debug(`Stable heading ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
+
+    return stable;
+}
+
+function isStableTWD(app, twdHistory, options) {
+    if (!options?.twdFilter?.useTwdThreshold) return true;
     if (twdHistory.length === 0) return false;
 
+    const thresholdDeg = options.twdFilter.sameTwdAngleOffset;
     const anglesDeg = twdHistory.map(e => radToDeg(e.value));
     const reference = anglesDeg[0];
     const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
@@ -135,6 +153,7 @@ function findClosestPolarPoint(twa, tws, polarData) {
 
 module.exports = {
     isStableCourse,
+    isStableHdg,
     isStableTWD,
     passesVmgRatioFilter,
     passesAvgSpeedFilter,

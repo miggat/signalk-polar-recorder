@@ -20,23 +20,61 @@
       "format": "text",
       "default": "auto-recording-polar.json"
     },
-    "anglePath": {
-      "type": "string",
-      "title": "Angle path",
-      "format": "text",
-      "default": "environment.wind.angleTrueWater"
-    },
-    "speedPath": {
-      "type": "string",
-      "title": "Speed path",
-      "format": "text",
-      "default": "environment.wind.speedTrue"
-    },
     "useStdDev": {
       "type": "boolean",
       "title": "Use standard deviation for filters",
       "description": "If enabled, filters use standard deviation instead of simple average ratio comparisons. The threshold fields act as z-score limits.",
       "default": true
+    },
+    "pathSources": {
+      "type": "object",
+      "title": "Paths & Sources",
+      "properties": {
+        "anglePath": {
+          "type": "string",
+          "title": "Wind angle path",
+          "format": "text",
+          "default": "environment.wind.angleTrueWater"
+        },
+        "angleSource": {
+          "type": "string",
+          "title": "Wind angle source (leave empty to use any)",
+          "format": "text",
+          "default": ""
+        },
+        "speedPath": {
+          "type": "string",
+          "title": "Wind speed path",
+          "format": "text",
+          "default": "environment.wind.speedTrue"
+        },
+        "speedSource": {
+          "type": "string",
+          "title": "Wind speed source (leave empty to use any)",
+          "format": "text",
+          "default": ""
+        },
+        "stwSource": {
+          "type": "string",
+          "title": "STW",
+          "description": "Source for navigation.speedThroughWater (leave empty to use any)"
+        },
+        "twdSource": {
+          "type": "string",
+          "title": "TWD",
+          "description": "Source for environment.wind.directionTrue (leave empty to use any)"
+        },
+        "cogSource": {
+          "type": "string",
+          "title": "COG",
+          "description": "Source for navigation.courseOverGroundTrue (leave empty to use any)"
+        },
+        "hdgSource": {
+          "type": "string",
+          "title": "HDG",
+          "description": "Source for navigation.headingTrue (leave empty to use any)"
+        }
+      }
     },
     "motoringFilter": {
       "type": "object",
@@ -45,12 +83,12 @@
         "useAutostate": {
           "type": "boolean",
           "title": "Use signalk-autostate to detect if engines are on",
-          "description":"If enabled, the plugin will use signalk-autostate to detect if motoring, to disable the polar recording. If disabled, the plugin will record if engine revs are under 'Max revs'",
+          "description": "If enabled, the plugin will use signalk-autostate to detect if motoring, to disable the polar recording. If disabled, the plugin will record if engine revs are under 'Max revs'",
           "default": true
         },
         "maxRevForEngine": {
           "type": "integer",
-          "title":"Max revs",
+          "title": "Max revs",
           "description": "Max revolutions to consider the engine is off",
           "default": 0
         }
@@ -65,6 +103,29 @@
           "title": "Filter the recorded points by COG stability",
           "description": "Toggle to enable or disable the point filtering based on COG stability.",
           "default": true
+        },
+        "minLenghtValidData": {
+          "type": "number",
+          "title": "Minimum time on course (seconds)",
+          "description": "The minimum time in the same course to consider the values are valid to record.",
+          "default": 5
+        },
+        "sameCourseAngleOffset": {
+          "type": "number",
+          "title": "Accepted course variation to consider stable course (degrees)",
+          "default": 2
+        }
+      }
+    },
+    "hdgFilter": {
+      "type": "object",
+      "title": "HDG Filter",
+      "properties": {
+        "useHdgThreshold": {
+          "type": "boolean",
+          "title": "Filter the recorded points by HDG stability",
+          "description": "Toggle to enable or disable the point filtering based on HDG stability.",
+          "default": false
         },
         "minLenghtValidData": {
           "type": "number",

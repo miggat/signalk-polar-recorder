@@ -1,8 +1,14 @@
 module.exports = {
+  pathSources: {
+    classNames: "border rounded p-3 mb-3 bg-light"
+  },
   motoringFilter: {
     classNames: "border rounded p-3 mb-3 bg-light"
   },
   cogFilter: {
+    classNames: "border rounded p-3 mb-3 bg-light"
+  },
+  hdgFilter: {
     classNames: "border rounded p-3 mb-3 bg-light"
   },
   twdFilter: {
