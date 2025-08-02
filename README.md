@@ -1,4 +1,119 @@
+# Signal K Polar Recorder Plugin
+
+The **Signal K Polar Recorder** is a plugin for the Signal K server that automatically records boat performance data (polars) based on wind conditions and vessel speed. It enables sailors to build and refine polar diagrams that can be used for performance routing, race optimization, and sail trim analysis.
+
+---
+
+## ✨ Features
+
+- Record polar data automatically at fixed intervals
+- Multiple filters to ensure only valid, stable data points are stored
+- Works in the background or manually triggered
+- Compatible with signalk-autostate for engine detection
+- Fully configurable data sources and thresholds
+- Supports both ratio-based and standard deviation-based filtering
+
+---
+
+## ⚙️ Configuration Options
+
+### General
+
+| Setting | Description |
+|--------|-------------|
+| `sampleInterval` | Interval (in ms) between data samples. Default: `1000`. |
+| `automaticRecording` | Always record in the background. |
+| `automaticRecordingFile` | File name to store automatic polar recording. |
+| `useStdDev` | Use z-score filtering instead of simple ratio checks for stability. |
+
+---
+
+### Data Sources
+
+Configure where data is taken from and (optionally) which `$source` must match.
+
+- `anglePath`, `angleSource` – Wind angle (e.g. `environment.wind.angleTrueWater`)
+- `speedPath`, `speedSource` – Wind speed (e.g. `environment.wind.speedTrue`)
+- `stwSource` – Source for `navigation.speedThroughWater`
+- `cogSource` – Source for `navigation.courseOverGroundTrue`
+- `hdgSource` – Source for `navigation.headingTrue`
+- `twdSource` – Source for `environment.wind.directionTrue`
+
+---
+
+### Filtering Options
+
+Each filter ensures that only data from steady, valid sailing conditions is recorded.
+
+#### 🛳 Motoring Filter
+
+- `useAutostate` – If `true`, checks the signalk-autostate plugin to ignore motoring periods.
+- `maxRevForEngine` – Used only if `useAutostate` is `false`; filters points if engine revs exceed this value.
+
+#### 🧭 COG Filter
+
+- `useCogThreshold` – Only record data when course over ground is stable.
+- `minLenghtValidData` – Minimum duration (seconds) of stable COG before accepting data.
+- `sameCourseAngleOffset` – Max COG variation (degrees) allowed to consider it stable.
+
+#### 🧭 HDG Filter
+
+- `useHdgThreshold` – Only record data when heading is stable.
+- `minLenghtValidData` – Minimum duration (seconds) of stable HDG before accepting data.
+- `sameCourseAngleOffset` – Max HDG variation (degrees) allowed.
+
+#### 🌬 TWD Filter
+
+- `useTwdThreshold` – Only record when true wind direction is stable.
+- `minStableTwdTime` – Duration (seconds) of stable TWD required.
+- `sameTwdAngleOffset` – Max variation in TWD (degrees).
+
+#### ⛵️ VMG Filter
+
+- `useVmgThreshold` – Filter based on STW to expected polar boat speed ratio.
+- `vmgRatioThresholdUp` – Upper allowed ratio (e.g. 1.1)
+- `vmgRatioThresholdDown` – Lower allowed ratio (e.g. 0.8)
+
+#### ⚡ Speed (STW) Filter
+
+- `useAvgSpeedThreshold` – Enable STW filtering by comparing with short-term average.
+- `avgSpeedTimeWindow` – Time window (s) for averaging.
+- `avgSpeedThresholdUp` / `Down` – Ratio or z-score limits.
+
+#### 🌬 TWS Filter
+
+- Same logic as speed filter, applied to **True Wind Speed**.
+
+#### ⛵ TWA Filter
+
+- Same logic as speed filter, applied to **True Wind Angle**.
+
+---
+
+## 📁 Output
+
+The plugin writes polar data to JSON files, either automatically (`auto-recording-polar.json`) or via manual triggers. The structure follows:
+
+```json
+{
+  "45": {
+    "6": 5.2,
+    "8": 5.6
+  },
+  "60": {
+    "6": 5.8,
+    "8": 6.2
+  }
+}
+```
+
 # Changelog
+
+## [1.0.0] - 2025-08-03
+
+### Changed
+
+- Added readme
 
 ## [0.0.19] - 2025-08-03
 
