@@ -181,6 +181,27 @@ th {
     top: 24px;
 }
 
+#manualRecordingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(100, 100, 100, 0.7);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+}
+
+#manualRecordingOverlay>.red-dot {
+    position: fixed;
+    left: 24px;
+    top: 24px;
+}
+
 #errors {
     position: absolute;
     top: 300px;

@@ -69,7 +69,7 @@ module.exports = function (app) {
       function changeRecordingStatus(status) {
         if (status != state.recordingActive) {
           state.recordingActive = status;
-          state.notifyClients({ event: 'changeRecordStatus', status: status });
+          state.notifyClients({ event: 'changeRecordStatus', status: status, mode: state.recordingMode });
           if (status) {
             state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
             //state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
@@ -232,7 +232,7 @@ module.exports = function (app) {
 
             const initMessages = [
               { event: 'changeMotoringStatus', engineOn: state.motoring },
-              { event: 'changeRecordStatus', status: state.recordingActive },
+              { event: 'changeRecordStatus', status: state.recordingActive, mode: state.recordingMode },
               {
                 event: 'updateLivePerformance',
                 twa: state.liveTWA,
@@ -340,8 +340,6 @@ module.exports = function (app) {
         const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, headingHistory, twdHistory);
         const { twa, tws, stw, cog, twd } = readings;
 
-
-
         //*********** Filters
         app.debug(`>>> Applying filters <<<`);
 
@@ -395,7 +393,9 @@ module.exports = function (app) {
           state.notifyClients({ event: 'unableToRecord', errors: null });
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
 
+          app.debug(`Recording active: ${state.recordingActive} - Mode: ${state.recordingMode}`);
           if (!state.motoring && state.recordingActive) {
+            state.notifyClients({ event: 'changeRecordStatus', status: state.recordingActive, mode: state.recordingMode });
             app.debug('>>> Should update <<<');
             state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
             const updated = recorder.update(state, state.filePath);

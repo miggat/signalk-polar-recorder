@@ -24,7 +24,7 @@
                 <button id="newPolarBtn">Create new Polar</button>
                 <button id="recordPolarBtn">Record Polar</button>
                 <div id="recordControls">
-                    <button id="stopSaveBtn">Stop & Save</button>
+
                     <!-- <button id="stopCancelBtn">Stop & Cancel</button> -->
                 </div>
             </div>
@@ -63,8 +63,13 @@
         <div class="red-dot"></div>
         Recording in progress...
     </div>
+    <div id="manualRecordingOverlay" class="">
+        <div class="red-dot"></div>
+        Manual recording in progress...
+        <button id="stopSaveBtn">Stop & Save</button>
+    </div>
     <div id="errors">
-        
+
     </div>
     <script type="module" src="./scripts/main.js"></script>
 </body>

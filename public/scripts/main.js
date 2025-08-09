@@ -34,18 +34,29 @@ function connectWebSocket() {
                 break;
 
             case 'changeRecordStatus':
-                var recordingControls = document.getElementById('recordControls');
-                if (recordingControls) {
-                    recordingControls.style.display = message.status ? 'block' : 'none';
+                if (message.mode === 'auto') {
+                    console.log('Recording AUTO');
+                    //var recordingControls = document.getElementById('recordControls');
+                    // if (recordingControls) {
+                    //     recordingControls.style.display = message.status ? 'block' : 'none';
+                    // }
+                    document.getElementById('recordingOverlay').style.display = message.status ? 'block' : 'none';
                 }
-                document.getElementById('recordingOverlay').style.display = message.status ? 'block' : 'none';
+                else {
+                    console.log('Recording MANUAL');
+                    // var recordingControls = document.getElementById('recordControls');
+                    // if (recordingControls) {
+                    //     recordingControls.style.display = message.status ? 'block' : 'none';
+                    // }
+                    document.getElementById('manualRecordingOverlay').style.display = message.status ? 'block' : 'none';
+                }
                 break;
 
             case 'polarUpdated':
                 if (message.filePath != undefined) {
-                    
+
                     updateTimestamp();
-                    
+
                     const updatedFile = message.filePath.split('/').pop(); // Extract filename
                     const select = document.getElementById('polarFileSelect');
 
@@ -431,7 +442,8 @@ async function stopRecording(save) {
             }
         }
 
-        document.getElementById('recordControls').style.display = 'none';
+        document.getElementById('recordingOverlay').style.display = 'none';
+        document.getElementById('manualRecordingOverlay').style.display = 'none';
     } catch (err) {
         console.error('Error stopping recording:', err);
         alert('Unexpected error stopping recording');
