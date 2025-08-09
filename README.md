@@ -113,7 +113,9 @@ The plugin writes polar data to JSON files, either automatically (`auto-recordin
 
 ### Fixed
 
+### Changed
 
+- Added a configurable way to detect if boat is stopped
 
 ## [1.0.0] - 2025-08-03
 

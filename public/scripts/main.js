@@ -102,11 +102,21 @@ async function fetchPolarFiles(selectedFileName) {
         if (response.ok) {
             polarFiles = await response.json();
             const select = document.getElementById('polarFileSelect');
+
             select.innerHTML = polarFiles.map(file => `<option value="${file}">${file}</option>`).join('');
+
+            // Recuperar de localStorage si no se ha pasado selectedFileName
+            let lastSelected = selectedFileName || localStorage.getItem('lastSelectedPolarFile');
+
+            // Fallback al primero si no existe o no está en la lista
+            if (!lastSelected || !polarFiles.includes(lastSelected)) {
+                lastSelected = polarFiles[0];
+            }
+
             if (polarFiles.length > 0) {
-                const selectedFile = selectedFileName || polarFiles[0];
-                select.value = selectedFile;
-                await fetchPolarData(selectedFile);
+                select.value = lastSelected;
+                localStorage.setItem('lastSelectedPolarFile', lastSelected);
+                await fetchPolarData(lastSelected);
             }
         } else {
             console.error('Failed to fetch polar files');
@@ -115,6 +125,9 @@ async function fetchPolarFiles(selectedFileName) {
         console.error('Error fetching polar files:', error);
     }
 }
+
+
+
 
 function updateTimestamp() {
     const now = new Date();
@@ -477,12 +490,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    fetchPolarFiles().then(() => {
-        const select = document.getElementById('polarFileSelect');
-        select.addEventListener('change', (event) => {
-            fetchPolarData(event.target.value);
-        });
+    // Cuando cambie el select, guardar en localStorage
+    document.getElementById('polarFileSelect').addEventListener('change', (event) => {
+        const value = event.target.value;
+        localStorage.setItem('lastSelectedPolarFile', value);
+        fetchPolarData(value);
     });
+
+    // fetchPolarFiles().then(() => {
+    //     const select = document.getElementById('polarFileSelect');
+    //     select.addEventListener('change', (event) => {
+    //         fetchPolarData(event.target.value);
+    //     });
+    // });
 
 
 
