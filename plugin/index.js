@@ -370,6 +370,10 @@ module.exports = function (app) {
         if (!avgTwaFilterOk) reasons.push('average TWA filter failed');
         if (!avgTwsFilterOk) reasons.push('average TWS filter failed');
 
+        const stwKt = stw * 1.94384;
+        if (stwKt < options.minSpeedToConsiderBoatMoving) reasons.push('STW too low');
+
+
         const validData = reasons.length === 0;
 
         if (!validData) {
@@ -379,7 +383,7 @@ module.exports = function (app) {
 
         app.debug(`>>> Valid data ${validData} <<<`);
 
-        evaluateRecordingConditions(validData);
+        evaluateRecordingConditions(validData, stw);
 
         if (validData) {
           state.liveTWA = twa ? twa * 180 / Math.PI : undefined;

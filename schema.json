@@ -20,6 +20,13 @@
       "format": "text",
       "default": "auto-recording-polar.json"
     },
+    "minSpeedToConsiderBoatMoving": {
+      "type": "number",
+      "title": "Min STW to consider boat is moving (kt)",
+      "description": "STW lesser than this value will be considered as boat is stopped.",
+      "format": "number",
+      "default": 0.5
+    },
     "useStdDev": {
       "type": "boolean",
       "title": "Use standard deviation for filters",
