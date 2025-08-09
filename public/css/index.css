@@ -180,3 +180,18 @@ th {
     left: 24px;
     top: 24px;
 }
+
+#errors {
+    position: absolute;
+    top: 300px;
+    left: 10px;
+    text-align: left;
+    font-size: 1.2em;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 8px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1;    
+    color: red;
+    text-transform: capitalize;
+}

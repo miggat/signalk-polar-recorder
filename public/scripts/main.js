@@ -43,6 +43,9 @@ function connectWebSocket() {
 
             case 'polarUpdated':
                 if (message.filePath != undefined) {
+                    
+                    updateTimestamp();
+                    
                     const updatedFile = message.filePath.split('/').pop(); // Extract filename
                     const select = document.getElementById('polarFileSelect');
 
@@ -55,7 +58,31 @@ function connectWebSocket() {
                     }
                 }
                 break;
+            case 'unableToRecord':
+                const errorsDiv = document.getElementById('errors');
 
+                if (message.errors) {
+                    // Mostrar el div
+                    errorsDiv.style.display = 'block';
+
+                    // Limpiar contenido previo
+                    errorsDiv.innerHTML = '';
+
+                    // Crear la lista
+                    const ul = document.createElement('ul');
+                    message.errors.forEach(err => {
+                        const li = document.createElement('li');
+                        li.textContent = err;
+                        ul.appendChild(li);
+                    });
+
+                    // Añadir al div
+                    errorsDiv.appendChild(ul);
+                }
+                else {
+                    errorsDiv.style.display = 'none';
+                }
+                break;
             default:
                 console.warn("[WebSocket] Unknown event:", message);
         }
@@ -67,7 +94,7 @@ function connectWebSocket() {
             reconnectInterval = setInterval(() => {
                 console.log("[WebSocket] Trying to reconnect...");
                 connectWebSocket();
-            }, 10000);
+            }, 1000);
         }
     };
 
@@ -87,7 +114,7 @@ async function fetchPolarData(polarFile) {
             latestPolarData = await response.json();
             generateTable(latestPolarData);
             updateChart(latestPolarData, showFullChart);
-            updateTimestamp();
+            //updateTimestamp();
         } else {
             console.error('Failed to fetch polar data');
         }
@@ -130,6 +157,7 @@ async function fetchPolarFiles(selectedFileName) {
 
 
 function updateTimestamp() {
+    console.log('Updating timestamp');
     const now = new Date();
     document.getElementById('updateTime').textContent = `Updated at: ${now.toLocaleTimeString()}`;
 }

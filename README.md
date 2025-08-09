@@ -113,9 +113,13 @@ The plugin writes polar data to JSON files, either automatically (`auto-recordin
 
 ### Fixed
 
+- WebApp now only updates the timestamp if a new valid point has been recorded to the polar
+
 ### Changed
 
 - Added a configurable way to detect if boat is stopped
+- WebApp now stores las selected polar file
+- WebApp now show reasons why current point is not valid
 
 ## [1.0.0] - 2025-08-03
 

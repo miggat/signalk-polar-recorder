@@ -72,7 +72,7 @@ module.exports = function (app) {
           state.notifyClients({ event: 'changeRecordStatus', status: status });
           if (status) {
             state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
-            state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
+            //state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
           }
           app.debug(">>>>>>>>>>>>>>>>>>>> Recording", status);
         }
@@ -238,8 +238,9 @@ module.exports = function (app) {
                 twa: state.liveTWA,
                 tws: state.liveTWS,
                 stw: state.liveSTW
-              },
-              { event: 'polarUpdated', filePath: state.filePath }
+              }
+              //,
+              // { event: 'polarUpdated', filePath: state.filePath }
             ];
 
             initMessages.forEach(msg => {
@@ -378,6 +379,7 @@ module.exports = function (app) {
 
         if (!validData) {
           app.debug(`Invalid data due to: ${reasons.join(', ')}`);
+          state.notifyClients({ event: 'unableToRecord', errors: reasons });
           return;
         }
 
@@ -390,6 +392,7 @@ module.exports = function (app) {
           state.liveTWS = tws ? tws * 1.94384 : undefined;
           state.liveSTW = stw ? stw * 1.94384 : undefined;
 
+          state.notifyClients({ event: 'unableToRecord', errors: null });
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
 
           if (!state.motoring && state.recordingActive) {
