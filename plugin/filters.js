@@ -19,7 +19,7 @@ function isStableCourse(app, courseHistory, options) {
     const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
 
     const stable = maxDelta <= thresholdDeg;
-    app.debug(`Stable course ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
+    app.debug(`[FILTER] Stable course ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
 
     return stable;
 }
@@ -35,7 +35,7 @@ function isStableHdg(app, headingHistory, options) {
     const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
 
     const stable = maxDelta <= thresholdDeg;
-    app.debug(`Stable heading ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
+    app.debug(`[FILTER] Stable heading ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
 
     return stable;
 }
@@ -50,7 +50,7 @@ function isStableTWD(app, twdHistory, options) {
     const maxDelta = Math.max(...anglesDeg.map(a => angleDifferenceDeg(a, reference)));
 
     const stable = maxDelta <= thresholdDeg;
-    app.debug(`Stable TWD ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
+    app.debug(`[FILTER] Stable TWD ${stable} || maxDelta=${maxDelta} thresholdDeg=${thresholdDeg}`);
 
     return stable;
 }
@@ -64,12 +64,12 @@ function passesVmgRatioFilter(app, stwMs, twaRad, twsMs, polarData, options) {
 
     const { expectedBoatSpeed } = findClosestPolarPoint(Math.abs(twaDeg), twsKnots, polarData);
     if (expectedBoatSpeed == null || expectedBoatSpeed < 0.01) {
-        app.debug("No expected boat speed found for this TWA/TWS.");
+        app.debug("[FILTER] No expected boat speed found for this TWA/TWS.");
         return true;
     }
 
     const ratio = stwKnots / expectedBoatSpeed;
-    app.debug(`STW=${stwKnots.toFixed(2)}kt - Polar=${expectedBoatSpeed.toFixed(2)}kt || Ratio=${ratio.toFixed(2)}`);
+    app.debug(`[FILTER] STW=${stwKnots.toFixed(2)}kt - Polar=${expectedBoatSpeed.toFixed(2)}kt || Ratio=${ratio.toFixed(2)}`);
 
     return (
         ratio < options.vmgFilter.vmgRatioThresholdUp &&
@@ -85,7 +85,7 @@ function passesAvgSpeedFilter(app, stw, stwHistory, options) {
     const baseline = options.useStdDev ? standardDeviation(values) : mean(values);
     const ratio = baseline > 0.01 ? stw / baseline : null;
 
-    app.debug(`AVG STW Filter STW=${stw} | BASELINE=${baseline.toFixed(2)} | Ratio=${ratio}`);
+    app.debug(`[FILTER] AVG STW Filter STW=${stw} | BASELINE=${baseline.toFixed(2)} | Ratio=${ratio}`);
     return (
         ratio !== null &&
         ratio < f.avgSpeedThresholdUp &&
@@ -101,7 +101,7 @@ function passesAvgTwaFilter(app, twa, twaHistory, options) {
     const baseline = options.useStdDev ? standardDeviation(values) : mean(values);
     const ratio = Math.abs(baseline) > 0.01 ? Math.abs(twa) / Math.abs(baseline) : null;
 
-    app.debug(`AVG TWA Filter TWA=${twa} | BASELINE=${baseline.toFixed(2)} | Ratio=${ratio}`);
+    app.debug(`[FILTER] AVG TWA Filter TWA=${twa} | BASELINE=${baseline.toFixed(2)} | Ratio=${ratio}`);
     return (
         ratio !== null &&
         ratio < f.avgTwaThresholdUp &&
@@ -117,7 +117,7 @@ function passesAvgTwsFilter(app, tws, twsHistory, options) {
     const baseline = options.useStdDev ? standardDeviation(values) : mean(values);
     const ratio = baseline > 0.01 ? tws / baseline : null;
 
-    app.debug(`AVG TWS Filter TWS=${tws} | BASELINE=${baseline.toFixed(2)} | Ratio=${ratio}`);
+    app.debug(`[FILTER] AVG TWS Filter TWS=${tws} | BASELINE=${baseline.toFixed(2)} | Ratio=${ratio}`);
     return (
         ratio !== null &&
         ratio < f.avgTwsThresholdUp &&

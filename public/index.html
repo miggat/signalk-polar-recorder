@@ -37,24 +37,41 @@
             </div>
 
             <div class="file-row">
-                File: <span id="current-file" class="file-pill">—</span>
+                File: <span id="current-file-manual" class="file-pill">—</span>
             </div>
         </div>
 
-        <div id="errors">
-            <ul id="errorList"></ul>
+        <div id="errors-manual" class="errors-container">
+            <ul id="errors-manual-list"></ul>
         </div>
 
-        <div class="control-card">
+        <!-- 1) Selected file -->
+        <div id="selectedFileCard" class="control-card">
+            <div class="section-title">SELECTED FILE</div>
             <select id="polarFileSelect"></select>
-            <button id="exportPolarBtn">Export current polar</button>
-            <button id="importPolarBtn">Import polar file</button>
         </div>
 
-        <div class="control-card">
-            <button id="newPolarBtn">Create new Polar</button>
-            <button id="recordPolarBtn">Record Polar</button>
+        <!-- 2) File actions -->
+        <div id="fileActionsCard" class="control-card">
+            <div class="section-title">FILE ACTIONS</div>
+            <div class="row-actions">
+                <button id="exportPolarBtn">Export current polar</button>
+                <button id="importPolarBtn">Import polar file</button>
+                <button id="newPolarBtn">Create new Polar</button>
+            </div>
+            <!-- input oculto para importar -->
+            <input type="file" id="importFileInput" accept=".json,.csv" style="display:none">
         </div>
+
+        <!-- 3) Recording actions -->
+        <div id="recordActionsCard" class="control-card">
+            <div class="section-title">RECORD</div>
+            <div class="row-actions">
+                <button id="recordPolarBtn">Record Polar</button>
+                <button id="stopSaveBtn" class="hidden">Stop Recording</button>
+            </div>
+        </div>
+
 
         <div id="lastPolarUpdate" class="control-card">
             <div class="section-title">LAST UPDATE</div>
@@ -92,7 +109,7 @@
 
         <div id="optionsCard" class="control-card">
             <button id="toggleFullChartBtn">Half polar</button>
-            <button id="showTableBtn">Show Table</button>
+            <button id="showTableBtn" class="js-show-table">Show Table</button>
         </div>
 
     </div>
@@ -109,12 +126,12 @@
             </div>
 
             <div class="file-row">
-                File: <span id="current-file" class="file-pill">—</span>
+                File: <span id="current-file-auto" class="file-pill">—</span>
             </div>
         </div>
 
-        <div id="errors">
-            <ul id="errorList"></ul>
+        <div id="errors-auto" class="errors-container">
+            <ul id="errors-auto-list"></ul>
         </div>
 
         <div id="lastPolarUpdate" class="control-card">
@@ -153,7 +170,7 @@
 
         <div id="optionsCard" class="control-card">
             <button id="toggleFullChartBtn">Half polar</button>
-            <button id="showTableBtn">Show Table</button>
+            <button id="showTableBtn" class="js-show-table">Show Table</button>
         </div>
 
     </div>

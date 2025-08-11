@@ -1,8 +1,8 @@
 /* Tarjetas genéricas */
 .control-card,
-body.mode-auto #optionsCard,
-body.mode-auto #liveData,
-body.mode-auto #errors{
+body #optionsCard,
+body #liveData,
+body #errors{
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -43,7 +43,12 @@ body.mode-auto #errors{
 
 /* Aplica a tus botones existentes (fallback a falta de CSS Modules) */
 #toggleFullChartBtn,
-#showTableBtn{
+#showTableBtn,
+#exportPolarBtn,
+#importPolarBtn,
+#newPolarBtn,
+#recordPolarBtn,
+#stopSaveBtn{
   appearance: none;
   border: 1px solid var(--border);
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
@@ -57,7 +62,12 @@ body.mode-auto #errors{
   margin-top: 0;
 }
 #toggleFullChartBtn:hover,
-#showTableBtn:hover{
+#showTableBtn:hover,
+#exportPolarBtn:hover,
+#importPolarBtn:hover,
+#newPolarBtn:hover,
+#recordPolarBtn:hover,
+#stopSaveBtn:hover{
   background: var(--hover);
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 80%);
@@ -91,6 +101,12 @@ body.mode-auto #errors{
   border: 1px solid var(--border);
   background: var(--surface);
 }
+
+/* Oculto por defecto en todos los modos */
+#toggleTableContainer{
+  display: none;
+}
+
 #toggleTableContainer.expanded{
   position: fixed;
   inset: 0;
@@ -110,10 +126,24 @@ body.mode-auto #errors{
   min-height: 0;
   overflow: auto;
 }
-#toggleTableContainer.expanded #showTableBtn{
+
+/* Botón cerrar dentro del overlay */
+#closeTableBtn{
   align-self: flex-start;
-  margin-bottom: 10px;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+  font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
 }
+#closeTableBtn:hover{
+  background: var(--hover);
+  border-color: var(--accent);
+}
+
 
 
 #liveData .section-title{
@@ -238,4 +268,146 @@ body.mode-auto #errors{
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent), transparent 85%);
   color: var(--text);
   font: 700 12.5px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Ocúltalo SIEMPRE salvo que tenga .expanded */
+#toggleTableContainer:not(.expanded){
+  display: none !important;
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* Cuando está abierto */
+#toggleTableContainer.expanded{
+  display: flex !important;
+  visibility: visible;
+  opacity: 1;
+}
+
+
+
+
+
+/* Record buttons */
+#recordActionsCard,
+#fileActionsCard,
+#selectedFileCard{
+  font: 500 13.5px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
+#recordActionsCard .section-title,
+#fileActionsCard .section-title,
+#selectedFileCard .section-title{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 800 15.5px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-top: 2px;
+  margin-bottom: 8px;
+}
+
+/* acento a la izquierda del título */
+#recordActionsCard .section-title::before,
+#fileActionsCard .section-title::before,
+#selectedFileCard .section-title::before{
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent), transparent 80%);
+}
+
+
+
+/* polar select */
+
+/* Card: asegúrate de que el contenedor posiciona la flecha */
+#selectedFileCard{ position: relative; }
+
+/* Select moderno */
+#polarFileSelect{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  display: block;
+  width: 100%;
+  padding: 10px 40px 10px 12px; /* espacio para la flecha a la derecha */
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+
+  font: 600 13px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing: .2px;
+
+  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .06s ease;
+  box-shadow: 0 0 0 0 transparent; /* limpio por defecto */
+  cursor: pointer;
+}
+
+#polarFileSelect:hover{
+  background: var(--hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 85%);
+}
+
+#polarFileSelect:focus,
+#polarFileSelect:focus-visible{
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 70%);
+}
+
+#polarFileSelect:active{
+  transform: translateY(1px);
+}
+
+/* Estado deshabilitado */
+#polarFileSelect:disabled{
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* Color del menú desplegable (cuando el UA lo respeta) */
+#polarFileSelect option{
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Flecha custom dibujada en el card (sin tocar el HTML) */
+#selectedFileCard::after{
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  right: 24px;
+  top: 50px;              /* ajusta si cambias márgenes del título */
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  opacity: .9;
+}
+
+/* Si el select recibe foco, acentuamos la flecha */
+#polarFileSelect:focus ~ .dummy,
+#polarFileSelect:focus-visible ~ .dummy{} /* no hace nada, solo evita warnings */
+
+#polarFileSelect:focus-visible + .select-arrow,
+#selectedFileCard:has(#polarFileSelect:focus-visible)::after{
+  border-color: var(--accent);
+}
+
+/* (Fallback si :has no está disponible en tu navegador)
+   Puedes eliminar este bloque si no te preocupa Safari viejo */
+@supports not (selector(:has(*))){
+  #polarFileSelect:focus-visible{
+    /* el anillo ya se ve; la flecha mantiene el color por defecto */
+  }
 }

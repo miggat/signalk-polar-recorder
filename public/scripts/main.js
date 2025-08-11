@@ -49,31 +49,48 @@ function connectWebSocket() {
             case 'changeRecordStatus':
 
                 if (message.mode === 'auto') {
-                    //var recordingControls = document.getElementById('recordControls');
-                    // if (recordingControls) {
-                    //     recordingControls.style.display = message.status ? 'block' : 'none';
-                    // }
-                    //document.getElementById('recordingOverlay').style.display = message.status ? 'block' : 'none';
-
                     if (currentMode != message.mode) {
                         console.log(`Recording ${message.mode}`);
                         setLayoutMode(currentMode, selectedPolarFile);
                     }
                 }
                 else {
+                    if (currentMode != message.mode) {
+                        console.log(`Recording ${message.mode}`);
+                        setLayoutMode(currentMode, selectedPolarFile);
+                    }
 
-                    // var recordingControls = document.getElementById('recordControls');
-                    // if (recordingControls) {
-                    //     recordingControls.style.display = message.status ? 'block' : 'none';
-                    // }
-                    //document.getElementById('manualRecordingOverlay').style.display = message.status ? 'block' : 'none';
+
+                }
+                break;
+            case 'ping':
+
+                if (message.mode === 'auto') {
                     if (currentMode != message.mode) {
                         console.log(`Recording ${message.mode}`);
                         setLayoutMode(currentMode, selectedPolarFile);
                     }
                 }
-                break;
+                else {
+                    if (currentMode != message.mode) {
+                        console.log(`Recording ${message.mode}`);
+                        setLayoutMode(currentMode, selectedPolarFile);
+                    }
+                }
 
+                setRecordingBanner(selectedPolarFile);
+
+                const recordPolarBtn = document.getElementById('recordPolarBtn');
+                const stopSaveBtn = document.getElementById('stopSaveBtn');
+
+                if (message.recording) {
+                    recordPolarBtn.classList.add('hidden');
+                    stopSaveBtn.classList.remove('hidden');
+                } else {
+                    recordPolarBtn.classList.remove('hidden');
+                    stopSaveBtn.classList.add('hidden');
+                }
+                break;
             case 'polarUpdated':
                 if (message.filePath != undefined) {
                     updateTimestamp(message);
@@ -97,23 +114,30 @@ function connectWebSocket() {
                 }
                 break;
             case 'recordErrors':
-                const errorsDiv = document.getElementById('errors');
+                let errorsDiv = null;
+                let errorsList = null;
+
+                if (currentMode === 'auto') {
+                    errorsDiv = document.getElementById('errors-auto');
+                    errorsList = document.getElementById('errors-auto-list');
+
+                } else {
+                    errorsDiv = document.getElementById('errors-manual');
+                    errorsList = document.getElementById('errors-manual-list');
+                }
 
                 if (message.errors) {
                     // Mostrar el div
                     errorsDiv.style.display = 'block';
 
-                    // Crear la lista
-                    const ul = document.getElementById('errorList');
                     // Limpiar contenido previo
-                    ul.innerHTML = '';
+                    errorsList.innerHTML = '';
 
                     message.errors.forEach(err => {
                         const li = document.createElement('li');
                         li.textContent = err;
-                        ul.appendChild(li);
+                        errorsList.appendChild(li);
                     });
-
                 }
                 else {
                     errorsDiv.style.display = 'none';
@@ -170,7 +194,13 @@ function setRecordingBanner(selectedPolarFile) {
         // Texto base
         document.getElementById('autoRecordText').textContent = 'Automatic recording in progress';
         // Fichero destacado
-        document.getElementById('current-file').textContent = selectedPolarFile || '—';
+        document.getElementById('current-file-auto').textContent = selectedPolarFile || '—';
+    }
+    else {
+        // Texto base
+        document.getElementById('autoRecordText').textContent = 'Manual recording in progress';
+        // Fichero destacado
+        document.getElementById('current-file-manual').textContent = selectedPolarFile || '—';
     }
 }
 
@@ -576,7 +606,7 @@ async function startRecording(polarFile) {
     const result = await response.json();
 
     if (result.success) {
-        document.getElementById('recordControls').style.display = 'block';
+        //document.getElementById('recordControls').style.display = 'block';
     } else if (result.message) {
         alert(result.message);
     }
@@ -602,8 +632,8 @@ async function stopRecording(save) {
             }
         }
 
-        document.getElementById('recordingOverlay').style.display = 'none';
-        document.getElementById('manualRecordingOverlay').style.display = 'none';
+        // document.getElementById('recordingOverlay').style.display = 'none';
+        // document.getElementById('manualRecordingOverlay').style.display = 'none';
     } catch (err) {
         console.error('Error stopping recording:', err);
         alert('Unexpected error stopping recording');
@@ -613,25 +643,25 @@ async function stopRecording(save) {
 
 // Init chart
 initChart(showFullChart);
-// Init
-//fetchPolarFiles();
 // Initial connection
 connectWebSocket();
 
 //setInterval(fetchLivePerformance, 1000);
 
 document.addEventListener("DOMContentLoaded", () => {
-    const showTableBtn = document.getElementById("showTableBtn");
+    const showTableBtn = document.querySelectorAll(".js-show-table");
     const closeTableBtn = document.getElementById("closeTableBtn");
+    const overlay = document.getElementById("toggleTableContainer");
 
-    showTableBtn.addEventListener("click", () => {
-        const container = document.getElementById("toggleTableContainer");
-        container.classList.add("expanded");
-    });
+    // Abrir
+    document.querySelectorAll('.js-show-table')
+        .forEach(btn => btn.addEventListener('click', () => {
+            overlay.classList.add('expanded');
+        }));
 
-    closeTableBtn.addEventListener("click", () => {
-        const container = document.getElementById("toggleTableContainer");
-        container.classList.remove("expanded");
+    // Cerrar
+    closeTableBtn?.addEventListener("click", () => {
+        overlay.classList.remove("expanded");
     });
 
     document.getElementById('exportPolarBtn')?.addEventListener('click', exportCurrentPolarToCSV);

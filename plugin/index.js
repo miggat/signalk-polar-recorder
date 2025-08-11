@@ -13,6 +13,7 @@ const {
   passesAvgTwaFilter,
   passesAvgTwsFilter
 } = require('./filters');
+const { styleText } = require('util');
 
 
 let unsubscribes = [];
@@ -79,7 +80,10 @@ module.exports = function (app) {
       }
 
       function evaluateRecordingConditions(validData) {
+        app.debug(`Evaluating recording conditions. Current recording state: ${state.recordingActive}; mode: ${state.recordingMode}`);
+
         if (state.motoring) {
+          app.debug('No recording because motoring');
           changeRecordingStatus(false);
           return;
         }
@@ -95,6 +99,7 @@ module.exports = function (app) {
           }
         }
         else {
+          app.debug('No recording because no valid data');
           changeRecordingStatus(false);
           return;
         }
@@ -334,9 +339,13 @@ module.exports = function (app) {
       if (options.automaticRecording) {
         state.recordingMode = 'auto';
         changeRecordingStatus(true);
+      } else {
+        state.recordingActive = false;
       }
 
       state.interval = setInterval(() => {
+
+        state.notifyClients({ event: 'ping', recording: state.recordingActive, mode: state.recordingMode, file: state.polarDataFile });
 
         const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, headingHistory, twdHistory);
         const { twa, tws, stw, cog, twd } = readings;
@@ -384,6 +393,8 @@ module.exports = function (app) {
 
         app.debug(`>>> Valid data ${validData} <<<`);
 
+        
+
         evaluateRecordingConditions(validData, stw);
 
         if (validData) {
@@ -393,7 +404,7 @@ module.exports = function (app) {
 
           state.notifyClients({ event: 'recordErrors', errors: null });
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
-
+          
           app.debug(`Recording active: ${state.recordingActive} - Mode: ${state.recordingMode}`);
           if (!state.motoring && state.recordingActive) {
             state.notifyClients({ event: 'changeRecordStatus', status: state.recordingActive, mode: state.recordingMode });

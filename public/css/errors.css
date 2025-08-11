@@ -1,5 +1,5 @@
 /* Caja */
-body.mode-auto #errors{
+.errors-container{
   border-left: 4px solid var(--danger);
   background:
     linear-gradient(180deg,
@@ -21,7 +21,7 @@ body.mode-auto #errors{
 }
 
 /* Lista */
-body.mode-auto #errors ul{
+.errors-container ul{
   margin: 0;
   padding-left: 1.2em;
   font: 500 13.5px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -29,12 +29,12 @@ body.mode-auto #errors ul{
   text-transform: capitalize;
   list-style: none;
 }
-body.mode-auto #errors li{
+.errors-container li{
   position: relative;
   margin: 4px 0;
   padding-left: 20px;
 }
-body.mode-auto #errors li::before{
+.errors-container li::before{
   content: "⚠";
   position: absolute;
   left: 0; top: 0;

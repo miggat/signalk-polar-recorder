@@ -25,9 +25,9 @@ module.exports = function (app, state) {
   });
 
   app.post(`${API_BASE}/start-recording`, (req, res) => {
-    if (state.recordingActive) {
-      return res.json({ success: false, message: 'Recording is already active.' });
-    }
+    // if (state.recordingActive) {
+    //   return res.json({ success: false, message: 'Recording is already active.' });
+    // }
 
     const polarFile = req.body?.polarFile;
 
@@ -35,6 +35,8 @@ module.exports = function (app, state) {
     state.polarDataFile = path.join(app.getDataDirPath(), polarFile);
     state.recording = state.polarDataFile ? polarStore.load(state.polarDataFile) : state.polarData;
     state.recordingActive = true;
+
+    app.debug(`Set recording state to: ${state.recordingActive}`);
 
     res.json({ success: true });
   });
