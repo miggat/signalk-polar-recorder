@@ -8,13 +8,11 @@
     <script src="./libs/highcharts.js"></script>
     <script src="./libs/highcharts-more.js"></script>
     <script src="./libs/exporting.js"></script>
-    <!-- <link rel="stylesheet" href="./css/index.css">
-
-    <link rel="stylesheet" href="./css/table.css"> -->
 
     <link rel="stylesheet" href="css/theme.css">
-    <link rel="stylesheet" href="css/layout.auto.css">
     <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/layout.auto.css">
+    <link rel="stylesheet" href="css/layout.manual.css">
     <link rel="stylesheet" href="css/recording.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/errors.css">
@@ -27,64 +25,131 @@
     <div id="container"></div>
 
     <!----------------------------------- MANUAL ----------------------------------->
-    <!-- <div id="manualRecording">
 
-        <div id="headerContainer">
-            <h2>Polar Data Viewer</h1>
-                <p id="updateTime">Polar file updated at: --:--:--</p>
-                <div>
-                    <select id="polarFileSelect"></select>
-                    <button id="exportPolarBtn">Export current polar</button>
-                    <button id="importPolarBtn">Import polar file</button>
-                </div>
-                <div>
-                    <button id="newPolarBtn">Create new Polar</button>
-                    <button id="recordPolarBtn">Record Polar</button>
-                  
-                </div>
-        </div>
-        <div id="liveData">
-            <div>
-                <span id="windAngle">Wind Angle: --°</span> |
-                <span id="windSpeed">Wind Speed: -- kt</span> |
-                <span id="boatSpeed">Boat Speed: -- kt</span>
+
+    <div id="manualRecording">
+        <div id="recordingStatus" class="control-card">
+            <div class="section-title">RECORDING</div>
+
+            <div class="status-row">
+                <div class="red-dot"></div>
+                <span id="autoRecordText"></span>
             </div>
-            <div style="margin-top: 5px; font-size: 1em;">
-                <span id="closestPolar">Closest Polar: -- kt TWS / --° TWA</span> <br>
-                <span id="speedDifference">Difference: -- kt (--%)</span>
+
+            <div class="file-row">
+                File: <span id="current-file" class="file-pill">—</span>
             </div>
         </div>
-        <div id="manualRecordingOverlay" class="">
-            <div class="red-dot"></div>
-            Manual recording in progress...
-            <button id="stopSaveBtn">Stop & Save</button>
-        </div>
-        <div id="errors">
-
-        </div>
-    </div> -->
-
-    <!----------------------------------- AUTO ----------------------------------->
-
-    <div id="autoRecording">
-        <div class="red-dot"></div>
-        <span id="autoRecordText">Recording in progress...</span>
 
         <div id="errors">
             <ul id="errorList"></ul>
         </div>
 
+        <div class="control-card">
+            <select id="polarFileSelect"></select>
+            <button id="exportPolarBtn">Export current polar</button>
+            <button id="importPolarBtn">Import polar file</button>
+        </div>
+
+        <div class="control-card">
+            <button id="newPolarBtn">Create new Polar</button>
+            <button id="recordPolarBtn">Record Polar</button>
+        </div>
+
+        <div id="lastPolarUpdate" class="control-card">
+            <div class="section-title">LAST UPDATE</div>
+            <div>TWA: <b id="last-twa">--</b>°</div>
+            <div>TWS: <b id="last-tws">--</b> kt</div>
+            <div>STW: <b id="last-stw">--</b> kt</div>
+            <div>Date: <b id="last-date">--</b> <span id="last-relative" class="badge muted">(—)</span></div>
+        </div>
+
         <div id="liveData">
+            <div class="section-title">NOW</div>
+            <div>TWA: <b id="now-twa">--</b>°</div>
+            <div>TWS: <b id="now-tws">--</b> kt</div>
+            <div>STW: <b id="now-stw">--</b> kt</div>
+
+            <hr class="section-sep">
+
+            <div class="section-title">POLAR</div>
+            <div>TWA: <b id="polar-twa">--</b>°</div>
+            <div>TWS: <b id="polar-tws">--</b> kt</div>
+            <div>STWexp: <b id="polar-stw">--</b> kt</div>
+
+            <hr class="section-sep">
+
+            <div class="section-title">Δ STW</div>
             <div>
-                <span id="windAngle">Wind Angle: --°</span> |
-                <span id="windSpeed">Wind Speed: -- kt</span> |
-                <span id="boatSpeed">Boat Speed: -- kt</span>
-            </div>
-            <div style="margin-top: 5px; font-size: 1em;">
-                <span id="closestPolar">Closest Polar: -- kt TWS / --° TWA</span> <br>
-                <span id="speedDifference">Difference: -- kt (--%)</span>
+                <span id="delta-abs" class="badge">-- kt</span>
+                <span id="delta-pct" class="badge muted" style="margin-left:6px">(--%)</span>
+                <span id="delta-trend" class="muted" style="margin-left:6px">–</span>
             </div>
         </div>
+
+
+
+
+        <div id="optionsCard" class="control-card">
+            <button id="toggleFullChartBtn">Half polar</button>
+            <button id="showTableBtn">Show Table</button>
+        </div>
+
+    </div>
+
+    <!----------------------------------- AUTO ----------------------------------->
+
+    <div id="autoRecording">
+        <div id="recordingStatus" class="control-card">
+            <div class="section-title">RECORDING</div>
+
+            <div class="status-row">
+                <div class="red-dot"></div>
+                <span id="autoRecordText">Automatic recording in progress</span>
+            </div>
+
+            <div class="file-row">
+                File: <span id="current-file" class="file-pill">—</span>
+            </div>
+        </div>
+
+        <div id="errors">
+            <ul id="errorList"></ul>
+        </div>
+
+        <div id="lastPolarUpdate" class="control-card">
+            <div class="section-title">LAST UPDATE</div>
+            <div>TWA: <b id="last-twa">--</b>°</div>
+            <div>TWS: <b id="last-tws">--</b> kt</div>
+            <div>STW: <b id="last-stw">--</b> kt</div>
+            <div>Date: <b id="last-date">--</b> <span id="last-relative" class="badge muted">(—)</span></div>
+        </div>
+
+        <div id="liveData">
+            <div class="section-title">NOW</div>
+            <div>TWA: <b id="now-twa">--</b>°</div>
+            <div>TWS: <b id="now-tws">--</b> kt</div>
+            <div>STW: <b id="now-stw">--</b> kt</div>
+
+            <hr class="section-sep">
+
+            <div class="section-title">POLAR</div>
+            <div>TWA: <b id="polar-twa">--</b>°</div>
+            <div>TWS: <b id="polar-tws">--</b> kt</div>
+            <div>STWexp: <b id="polar-stw">--</b> kt</div>
+
+            <hr class="section-sep">
+
+            <div class="section-title">Δ STW</div>
+            <div>
+                <span id="delta-abs" class="badge">-- kt</span>
+                <span id="delta-pct" class="badge muted" style="margin-left:6px">(--%)</span>
+                <span id="delta-trend" class="muted" style="margin-left:6px">–</span>
+            </div>
+        </div>
+
+
+
 
         <div id="optionsCard" class="control-card">
             <button id="toggleFullChartBtn">Half polar</button>
@@ -106,27 +171,9 @@
     </div>
 
 
-
-    <!-- <div id="toggleTableContainer">
-        <div id="tableWrapper">
-            <table id="polarTable">
-                <thead></thead>
-                <tbody id="polarTableBody"></tbody>
-            </table>
-        </div>
-    </div> -->
-
-
-
     <div id="motoringOverlay" class="">
         Recording disabled while motoring...
     </div>
-
-
-
-    <!-- <div id="chartControls">
-        <button id="toggleFullChartBtn">Half polar</button>
-    </div> -->
 
     <div id="errorOverlay">
         <h1>

@@ -1,0 +1,67 @@
+/* ====== Layout general modo MANUAL ====== */
+:root{
+  /* ancho propio del sidebar en manual (si quieres distinto del auto) */
+  --sidebar-w-manual: 420px;
+}
+
+body.mode-manual{
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--sidebar-w-manual) 1fr;
+  grid-template-rows: 100vh;
+  grid-template-areas: "sidebar main";
+  background: var(--bg);
+}
+
+/* Contenido principal (gráfico) */
+body.mode-manual #container{
+  grid-area: main;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  background: var(--bg);
+}
+
+/* El panel lateral en manual es #manualRecording */
+body.mode-manual #manualRecording{
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  color: var(--text);
+
+  /* coherencia visual con el auto */
+  border-right: 1px solid var(--border);
+  box-shadow: inset -1px 0 0 var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-2), transparent 25%),
+    var(--surface)
+  );
+  backdrop-filter: blur(6px);
+}
+
+/* Responsive: la barra arriba y el gráfico debajo */
+@media (max-width: 1200px){
+  body.mode-manual{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "sidebar"
+      "main";
+  }
+  body.mode-manual #manualRecording{
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: inset 0 -1px 0 var(--border);
+  }
+}
+
+/* ====== Visibilidad cruzada de modos ====== */
+body.mode-manual #autoRecording{ display: none !important; }
+body.mode-auto    #manualRecording{ display: none !important; }

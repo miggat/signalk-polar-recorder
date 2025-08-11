@@ -13,7 +13,9 @@ let ws;
 let reconnectInterval;
 
 let currentMode = null;
-let currentPolarName = null;
+
+let _lastPolarUpdateTs = null;
+let _lastRelTimer = null;
 
 function connectWebSocket() {
     ws = new WebSocket(`ws://${location.host}/plugins/polar-recorder/ws`);
@@ -39,9 +41,9 @@ function connectWebSocket() {
             case 'setMode':
                 currentMode = message.mode
 
-                currentPolarName = message.filePath.split('/').pop(); // Extract filename
+                selectedPolarFile = message.filePath?.split('/').pop(); // Extract filename
 
-                setLayoutMode(currentMode, currentPolarName);
+                setLayoutMode(currentMode);
                 break;
 
             case 'changeRecordStatus':
@@ -55,7 +57,7 @@ function connectWebSocket() {
 
                     if (currentMode != message.mode) {
                         console.log(`Recording ${message.mode}`);
-                        setLayoutMode(currentMode, currentPolarName);
+                        setLayoutMode(currentMode, selectedPolarFile);
                     }
                 }
                 else {
@@ -64,32 +66,34 @@ function connectWebSocket() {
                     // if (recordingControls) {
                     //     recordingControls.style.display = message.status ? 'block' : 'none';
                     // }
-                    document.getElementById('manualRecordingOverlay').style.display = message.status ? 'block' : 'none';
+                    //document.getElementById('manualRecordingOverlay').style.display = message.status ? 'block' : 'none';
+                    if (currentMode != message.mode) {
+                        console.log(`Recording ${message.mode}`);
+                        setLayoutMode(currentMode, selectedPolarFile);
+                    }
                 }
                 break;
 
             case 'polarUpdated':
                 if (message.filePath != undefined) {
-                    updateTimestamp();
+                    updateTimestamp(message);
 
                     const updatedFile = message.filePath.split('/').pop(); // Extract filename
-                    const select = document.getElementById('polarFileSelect');
 
-                    if (select && Array.from(select.options).some(opt => opt.value === updatedFile)) {
-                        select.value = updatedFile;
-                        fetchPolarData(updatedFile);
-                    } else {
-                        // If the file is new, re-fetch the list and then select the new one
-                        fetchPolarFiles(updatedFile);
+                    if (currentMode !== 'auto') {
+                        const select = document.getElementById('polarFileSelect');
+
+                        if (select && Array.from(select.options).some(opt => opt.value === updatedFile)) {
+                            select.value = updatedFile;
+                            fetchPolarData(updatedFile);
+                        } else {
+                            // If the file is new, re-fetch the list and then select the new one
+                            fetchPolarFiles(updatedFile);
+                        }
                     }
-
-
-                    // if (currentMode === 'auto') {
-                    //     document.getElementById('autoRecordText').innerText = 'Automatic recording in progress to file'
-                    // }
-                    // else {
-
-                    // }
+                    else {
+                        fetchPolarData(updatedFile);
+                    }
                 }
                 break;
             case 'recordErrors':
@@ -137,8 +141,6 @@ function connectWebSocket() {
 }
 
 function setLayoutMode(mode) {
-    // document.getElementById('autoRecording').style.display = mode === 'auto' ? 'flex' : 'none';
-    // document.getElementById('manualRecording').style.display = mode === 'auto' ? 'none' : 'flex';
 
     console.log(`Loaded ${currentMode} recording layout`);
 
@@ -147,17 +149,28 @@ function setLayoutMode(mode) {
         if (currentMode === 'auto') {
             document.body.classList.add('mode-auto');
             document.body.classList.remove('mode-manual');
-            document.getElementById('autoRecordText').innerText = `Automatic recording in progress to file ${currentPolarName}`;
-            fetchPolarData(currentPolarName);
+            setRecordingBanner(selectedPolarFile);
+            fetchPolarData(selectedPolarFile);
         }
         else {
             document.body.classList.remove('mode-auto');
             document.body.classList.add('mode-manual');
+
+            fetchPolarFiles();
         }
     }
     else {
         // Here we have an invalid recording mode
         document.getElementById('errorOverlay').style.display = 'block';
+    }
+}
+
+function setRecordingBanner(selectedPolarFile) {
+    if (currentMode === 'auto') {
+        // Texto base
+        document.getElementById('autoRecordText').textContent = 'Automatic recording in progress';
+        // Fichero destacado
+        document.getElementById('current-file').textContent = selectedPolarFile || '—';
     }
 }
 
@@ -213,10 +226,77 @@ async function fetchPolarFiles(selectedFileName) {
     }
 }
 
-function updateTimestamp() {
-    console.log('Updating timestamp');
+
+
+function updateTimestamp(payload) {
+    // 1) Mantener tu texto superior "Updated at: ...":
     const now = new Date();
-    document.getElementById('updateTime').textContent = `Updated at: ${now.toLocaleTimeString()}`;
+    const updateEl = document.getElementById('updateTime');
+    if (updateEl) updateEl.textContent = `Updated at: ${now.toLocaleTimeString()}`;
+
+    // 2) Extraer datos del último punto desde el payload
+    //    Admite dos formatos:
+    //    a) plano: payload.twa, payload.tws, payload.stw, payload.timestamp
+    //    b) anidado: payload.lastPoint = { twa, tws, stw, timestamp }
+    const p = payload?.lastPoint ?? payload ?? {};
+    const n = v => (v === undefined || v === null) ? null : Number(v);
+    const twa = n(p.twa);
+    const tws = n(p.tws);
+    const stw = n(p.stw);
+
+    // timestamp puede venir como ms epoch, ISO o Date
+    let ts = p.timestamp;
+    if (!(ts instanceof Date)) ts = ts != null ? new Date(ts) : now;
+
+    // 3) Volcar en el card de "LAST UPDATE"
+    setText('last-twa', Number.isFinite(twa) ? twa.toFixed(0) : '--');
+    setText('last-tws', Number.isFinite(tws) ? tws.toFixed(1) : '--');
+    setText('last-stw', Number.isFinite(stw) ? stw.toFixed(1) : '--');
+
+    const abs = formatAbs(ts);
+    setText('last-date', abs);
+
+    _lastPolarUpdateTs = ts;
+    tickRelative(); // primera actualización inmediata
+
+    // refresco periódico del relativo cada 30s
+    if (_lastRelTimer) clearInterval(_lastRelTimer);
+    _lastRelTimer = setInterval(tickRelative, 30 * 1000);
+}
+
+// ===== Helpers locales =====
+function setText(id, txt) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+}
+
+function formatAbs(dt) {
+    // fecha/hora compacta 24h
+    return dt.toLocaleString(undefined, {
+        year: '2-digit', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+    });
+}
+
+function formatRel(ms) {
+    if (ms == null || !isFinite(ms)) return '(—)';
+    const s = Math.max(0, Math.floor(ms / 1000));
+    if (s < 60) return `(${s}s)`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `(${m}m)`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `(${h}h)`;
+    const d = Math.floor(h / 24);
+    return `(${d}d)`;
+}
+
+function tickRelative() {
+    if (!_lastPolarUpdateTs) return;
+    const relEl = document.getElementById('last-relative');
+    if (!relEl) return;
+    const rel = formatRel(Date.now() - _lastPolarUpdateTs.getTime());
+    relEl.textContent = rel;
 }
 
 function generateTable(polarData) {
@@ -284,28 +364,60 @@ function findClosestPolarPoint(twa, tws, polarData) {
 // }
 
 function updateLivePerformance(twa, tws, stw) {
-
-    console.log('updateLivePerformance')
     updateLivePoint(twa, stw);
 
-    if (twa != undefined && tws != undefined && stw != undefined) {
-        document.getElementById("windAngle").textContent = `Wind Angle: ${twa.toFixed(0)}°`;
-        document.getElementById("windSpeed").textContent = `Wind Speed: ${tws.toFixed(1)} kt`;
-        document.getElementById("boatSpeed").textContent = `Boat Speed: ${stw.toFixed(1)} kt`;
+    const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    const has = v => v !== undefined && v !== null && Number.isFinite(v);
+    const fmtSigned = (v, d = 1) => (!has(v) ? '--' : ((v > 0 ? '+' : '') + v.toFixed(d)));
 
-        if (Object.keys(latestPolarData).length > 0) {
-            const { closestTWA, closestTWS, expectedBoatSpeed } = findClosestPolarPoint(twa, tws, latestPolarData);
-            const delta = (stw - expectedBoatSpeed).toFixed(2);
-            const deltaPct = expectedBoatSpeed > 0 ? ((delta / expectedBoatSpeed) * 100).toFixed(1) : "--";
+    const toneBadge = (el, tone) => {
+        if (!el) return;
+        el.classList.remove('badge-ok', 'badge-warn', 'badge-danger');
+        el.classList.add('badge');
+        if (tone) el.classList.add(tone);
+    };
 
-            document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA (${expectedBoatSpeed.toFixed(1)} kt STW)`;
-            document.getElementById("speedDifference").textContent = `Difference: ${delta} kt (${deltaPct}%)`;
-        } else {
-            document.getElementById("closestPolar").textContent = `Closest Polar: -- kt TWS / --° TWA`;
-            document.getElementById("speedDifference").textContent = `Difference: -- kt (--%)`;
-        }
+    if (!(has(twa) && has(tws) && has(stw))) {
+        ['now-twa', 'now-tws', 'now-stw', 'polar-twa', 'polar-tws', 'polar-stw'].forEach(id => setText(id, '--'));
+        setText('delta-abs', '-- kt'); setText('delta-pct', '(--%)'); setText('delta-trend', '–');
+        return;
+    }
+
+    // NOW
+    setText('now-twa', twa.toFixed(0));
+    setText('now-tws', tws.toFixed(1));
+    setText('now-stw', stw.toFixed(1));
+
+    // POLAR
+    if (latestPolarData && Object.keys(latestPolarData).length) {
+        const { closestTWA, closestTWS, expectedBoatSpeed } =
+            findClosestPolarPoint(Math.abs(twa), tws, latestPolarData) || {};
+
+        const exp = has(expectedBoatSpeed) ? expectedBoatSpeed : null;
+
+        setText('polar-twa', has(closestTWA) ? closestTWA.toFixed(0) : '--');
+        setText('polar-tws', has(closestTWS) ? closestTWS.toFixed(1) : '--');
+        setText('polar-stw', has(exp) ? exp.toFixed(1) : '--');
+
+        // Δ STW
+        const delta = has(exp) ? (stw - exp) : null;
+        const deltaPct = (has(exp) && exp > 0) ? (delta / exp) * 100 : null;
+
+        setText('delta-abs', `${fmtSigned(delta, 1)} kt`);
+        setText('delta-pct', `(${fmtSigned(deltaPct, 1)}%)`);
+
+        const trendEl = document.getElementById('delta-trend');
+        if (trendEl) trendEl.textContent = (delta > 0.05) ? '▲' : (delta < -0.05) ? '▼' : '–';
+
+        const tone = (delta == null) ? null : (delta > 0.05 ? 'badge-ok' : (delta < -0.05 ? 'badge-danger' : 'badge-warn'));
+        toneBadge(document.getElementById('delta-abs'), tone);
+        toneBadge(document.getElementById('delta-pct'), tone);
+    } else {
+        setText('polar-twa', '--'); setText('polar-tws', '--'); setText('polar-stw', '--');
+        setText('delta-abs', '-- kt'); setText('delta-pct', '(--%)'); setText('delta-trend', '–');
     }
 }
+
 
 async function fetchMotoringStatus() {
     const response = await fetch(`${API_BASE}/motoring`);
@@ -517,7 +629,7 @@ document.addEventListener("DOMContentLoaded", () => {
         container.classList.add("expanded");
     });
 
-     closeTableBtn.addEventListener("click", () => {
+    closeTableBtn.addEventListener("click", () => {
         const container = document.getElementById("toggleTableContainer");
         container.classList.remove("expanded");
     });

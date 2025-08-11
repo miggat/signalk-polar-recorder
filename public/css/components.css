@@ -114,3 +114,128 @@ body.mode-auto #errors{
   align-self: flex-start;
   margin-bottom: 10px;
 }
+
+
+#liveData .section-title{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* un poco más grandes que el body del card */
+  font: 800 15.5px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+/* acento a la izquierda del título */
+#liveData .section-title::before{
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent), transparent 80%);
+}
+
+/* separador uniforme (reemplaza el inline style del <hr>) */
+#liveData .section-sep{
+  border: 0;
+  border-top: 1px solid var(--border);
+  opacity: .65;
+  margin: 8px 0;
+}
+
+
+/* Fuente base coherente en todo el card */
+
+
+
+#lastPolarUpdate{
+  font: 500 13.5px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
+#lastPolarUpdate .section-title{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* un poco más grandes que el body del card */
+  font: 800 15.5px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+/* acento a la izquierda del título */
+#lastPolarUpdate .section-title::before{
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent), transparent 80%);
+}
+
+
+
+/* Cada fila con mismos ajustes tipográficos */
+#lastPolarUpdate > div{
+  font: inherit;
+  color: inherit;
+  font-variant-numeric: tabular-nums; /* cifras alineadas */
+}
+
+/* El título ya lo tienes, lo dejamos tal cual */
+
+/* Negritas: solo peso, misma familia */
+#lastPolarUpdate b{
+  font-weight: 700;
+  font-family: inherit;
+}
+
+/* Badge heredando familia (mantén tamaño si quieres más pequeño) */
+#lastPolarUpdate .badge{
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* opcional: en pantallas estrechas baja un pelín el tamaño */
+@media (max-width: 480px){
+  #liveData .section-title{ font-size: 14.5px; }
+}
+
+
+
+/* Card de estado de grabación */
+#recordingStatus{
+  font: 500 13.5px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
+#recordingStatus .status-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#recordingStatus .file-row{
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+/* “Pill” para el nombre del fichero */
+.file-pill{
+  display: inline-block;
+  margin-left: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent), transparent 85%);
+  color: var(--text);
+  font: 700 12.5px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}

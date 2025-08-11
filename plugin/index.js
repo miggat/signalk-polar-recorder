@@ -399,9 +399,15 @@ module.exports = function (app) {
             state.notifyClients({ event: 'changeRecordStatus', status: state.recordingActive, mode: state.recordingMode });
             app.debug('>>> Should update <<<');
             state.filePath = state.recordingMode === 'auto' ? state.automaticRecordingFile : state.polarDataFile;
-            const updated = recorder.update(state, state.filePath);
-            if (updated) {
-              state.notifyClients({ event: 'polarUpdated', filePath: state.filePath });
+            const res = recorder.update(state, state.filePath); // ⬅️ ahora devuelve objeto
+            if (res && res.updated) {
+              state.notifyClients({
+                event: 'polarUpdated',
+                filePath: state.filePath,
+                lastPoint: res.lastPoint,   // {twa,tws,stw,timestamp}
+                live: res.live,             // opcional: {twa,tws,stw} (valores en vivo)
+                previous: res.previous      // opcional: {stw,timestamp} si había un punto previo
+              });
             }
           }
         }

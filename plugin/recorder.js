@@ -10,7 +10,7 @@ function update(state, filePath) {
 
   if (windAngle === undefined || windSpeed === undefined || boatSpeed === undefined) {
     state.app.debug("Skipping update: missing live data");
-    return false;
+    return { updated: false };
   }
 
   const twa = Math.abs(roundToNearest(windAngle, 5));
@@ -22,26 +22,27 @@ function update(state, filePath) {
       polarData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     } catch (err) {
       state.app.error("Error reading polar file:", err);
-      return false;
+      return { updated: false };
     }
   }
 
-  const now = new Date().toISOString();
-  const existing = polarData[twa]?.[tws];
-  const newEntry = { boatSpeed, timestamp: now };
+  const nowIso = new Date().toISOString();
+  const existing = polarData[twa]?.[tws]; // e.g. { boatSpeed, timestamp }
+  const newEntry = { boatSpeed, timestamp: nowIso };
 
   if (existing) {
-    state.app.debug(`Before update: Recorded: ${existing} | Recorded STW: ${existing.boatSpeed} | Current STW: ${boatSpeed}`);
-  }
-  else {
+    state.app.debug(`Before update: recorded STW=${existing.boatSpeed} | current STW=${boatSpeed}`);
+  } else {
     state.app.debug(`No existing point found`);
   }
 
-  let updated = false;
+  let didUpdate = false;
+  let previous = existing ? { stw: existing.boatSpeed, timestamp: existing.timestamp } : undefined;
+
   if (!existing || boatSpeed > existing.boatSpeed) {
     if (!polarData[twa]) polarData[twa] = {};
     polarData[twa][tws] = newEntry;
-    updated = true;
+    didUpdate = true;
 
     try {
       fs.writeFileSync(filePath, JSON.stringify(polarData, null, 2));
@@ -51,7 +52,24 @@ function update(state, filePath) {
     }
   }
 
-  return updated;
+  // Punto “vigente” tras la posible actualización (si no se actualizó, es el existente)
+  const recorded = polarData[twa]?.[tws] || existing || newEntry;
+
+  return {
+    updated: didUpdate,
+    lastPoint: {
+      twa,
+      tws,
+      stw: recorded.boatSpeed,
+      timestamp: recorded.timestamp
+    },
+    live: {
+      twa: windAngle,
+      tws: windSpeed,
+      stw: boatSpeed
+    },
+    previous
+  };
 }
 
 module.exports = { update };
