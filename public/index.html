@@ -9,41 +9,84 @@
     <script src="./libs/highcharts-more.js"></script>
     <script src="./libs/exporting.js"></script>
     <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="./css/table.css">
 </head>
 
 <body>
-    <div id="headerContainer">
-        <h2>Polar Data Viewer</h1>
-            <p id="updateTime">Polar file updated at: --:--:--</p>
-            <div>
-                <select id="polarFileSelect"></select>
-                <button id="exportPolarBtn">Export current polar</button>
-                <button id="importPolarBtn">Import polar file</button>
-            </div>
-            <div>
-                <button id="newPolarBtn">Create new Polar</button>
-                <button id="recordPolarBtn">Record Polar</button>
-                <div id="recordControls">
 
-                    <!-- <button id="stopCancelBtn">Stop & Cancel</button> -->
-                </div>
-            </div>
-    </div>
-    <div id="liveData">
-        <div>
-            <span id="windAngle">Wind Angle: --°</span> |
-            <span id="windSpeed">Wind Speed: -- kt</span> |
-            <span id="boatSpeed">Boat Speed: -- kt</span>
-        </div>
-        <div style="margin-top: 5px; font-size: 1em;">
-            <span id="closestPolar">Closest Polar: -- kt TWS / --° TWA</span> <br>
-            <span id="speedDifference">Difference: -- kt (--%)</span>
-        </div>
-    </div>
     <div id="container"></div>
 
+    <!----------------------------------- MANUAL ----------------------------------->
+    <!-- <div id="manualRecording">
+
+        <div id="headerContainer">
+            <h2>Polar Data Viewer</h1>
+                <p id="updateTime">Polar file updated at: --:--:--</p>
+                <div>
+                    <select id="polarFileSelect"></select>
+                    <button id="exportPolarBtn">Export current polar</button>
+                    <button id="importPolarBtn">Import polar file</button>
+                </div>
+                <div>
+                    <button id="newPolarBtn">Create new Polar</button>
+                    <button id="recordPolarBtn">Record Polar</button>
+                  
+                </div>
+        </div>
+        <div id="liveData">
+            <div>
+                <span id="windAngle">Wind Angle: --°</span> |
+                <span id="windSpeed">Wind Speed: -- kt</span> |
+                <span id="boatSpeed">Boat Speed: -- kt</span>
+            </div>
+            <div style="margin-top: 5px; font-size: 1em;">
+                <span id="closestPolar">Closest Polar: -- kt TWS / --° TWA</span> <br>
+                <span id="speedDifference">Difference: -- kt (--%)</span>
+            </div>
+        </div>
+        <div id="manualRecordingOverlay" class="">
+            <div class="red-dot"></div>
+            Manual recording in progress...
+            <button id="stopSaveBtn">Stop & Save</button>
+        </div>
+        <div id="errors">
+
+        </div>
+    </div> -->
+
+    <!----------------------------------- AUTO ----------------------------------->
+
+    <div id="autoRecording">
+        <div class="red-dot"></div>
+        <span id="autoRecordText">Recording in progress...</span>
+
+        <div id="errors">
+            <ul id="errorList"></ul>
+        </div>
+
+        <div id="liveData">
+            <div>
+                <span id="windAngle">Wind Angle: --°</span> |
+                <span id="windSpeed">Wind Speed: -- kt</span> |
+                <span id="boatSpeed">Boat Speed: -- kt</span>
+            </div>
+            <div style="margin-top: 5px; font-size: 1em;">
+                <span id="closestPolar">Closest Polar: -- kt TWS / --° TWA</span> <br>
+                <span id="speedDifference">Difference: -- kt (--%)</span>
+            </div>
+        </div>
+
+        <div id="optionsCard" class="control-card">
+            <button id="toggleFullChartBtn">Half polar</button>
+            <button id="showTableBtn">Show Table</button>
+        </div>
+
+    </div>
+
+    <!-------------------------------- OTHER STUFF ----------------------------------->
+
     <div id="toggleTableContainer">
-        <button id="toggleTableBtn">Show Table</button>
+        <button id="closeTableBtn">Close</button>
         <div id="tableWrapper">
             <table id="polarTable">
                 <thead></thead>
@@ -52,25 +95,35 @@
         </div>
     </div>
 
-    <div id="chartControls">
-        <button id="toggleFullChartBtn">Half polar</button>
-    </div>
+
+
+    <!-- <div id="toggleTableContainer">
+        <div id="tableWrapper">
+            <table id="polarTable">
+                <thead></thead>
+                <tbody id="polarTableBody"></tbody>
+            </table>
+        </div>
+    </div> -->
+
+
 
     <div id="motoringOverlay" class="">
         Recording disabled while motoring...
     </div>
-    <div id="recordingOverlay" class="">
-        <div class="red-dot"></div>
-        Recording in progress...
-    </div>
-    <div id="manualRecordingOverlay" class="">
-        <div class="red-dot"></div>
-        Manual recording in progress...
-        <button id="stopSaveBtn">Stop & Save</button>
-    </div>
-    <div id="errors">
 
+
+
+    <!-- <div id="chartControls">
+        <button id="toggleFullChartBtn">Half polar</button>
+    </div> -->
+
+    <div id="errorOverlay">
+        <h1>
+            Something bad happened. Try to reload the page.
+        </h1>
     </div>
+
     <script type="module" src="./scripts/main.js"></script>
 </body>
 

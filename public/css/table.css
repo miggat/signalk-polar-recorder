@@ -1,0 +1,152 @@
+
+
+
+/* ====== Tema y variables ====== */
+:root{
+  --bg: #0b0d10;
+  --surface: #12161b;
+  --surface-2: #171c22;
+  --text: #e6e9ef;
+  --muted: #aab1bc;
+  --border: #243042;
+  --stripe: #0f1318;
+  --hover: #1b2430;
+  --accent: #4ea1ff;
+  --shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9;
+    --surface:#ffffff;
+    --surface-2:#f4f6f8;
+    --text:#1e2329;
+    --muted:#66707b;
+    --border:#e2e6ea;
+    --stripe:#fafbfc;
+    --hover:#eef2f6;
+    --accent:#2f6fff;
+    --shadow: 0 6px 18px rgba(0,0,0,.08);
+  }
+}
+
+/* ====== Contenedor / botón cerrar ====== */
+#toggleTableContainer{
+  display: grid;
+  gap: .75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+#closeTableBtn{
+  justify-self: end;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+  font: 600 12px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease;
+}
+#closeTableBtn:hover{ background: var(--surface-2); border-color: var(--accent); }
+#closeTableBtn:active{ transform: translateY(1px); }
+
+/* ====== Wrapper con scroll ====== */
+#tableWrapper{
+  overflow: auto;
+  max-height: min(70vh, 800px);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ====== Tabla ====== */
+#polarTable{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: 500 13.5px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
+/* Celdas base */
+#polarTable th,
+#polarTable td{
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* Números bonitos y alineados a la derecha (excepto primera columna) */
+#polarTable th:not(:first-child),
+#polarTable td:not(:first-child){
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cabecera sticky */
+#polarTable thead th{
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 -1px 0 var(--border);
+  font-weight: 700;
+}
+
+/* Primera columna sticky (TWA) */
+#polarTable th:first-child,
+#polarTable td:first-child{
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  font-weight: 600;
+}
+
+/* Zebra stripes (solo cuerpo) */
+#polarTable tbody tr:nth-child(even){
+  background: var(--stripe);
+}
+
+/* Hover fila */
+#polarTable tbody tr:hover{
+  background: var(--hover);
+}
+
+/* Bordes redondeados en las esquinas visibles */
+#polarTable thead th:first-child{ border-top-left-radius: 12px; }
+#polarTable thead th:last-child{ border-top-right-radius: 12px; }
+#polarTable tbody tr:last-child td:first-child{ border-bottom-left-radius: 12px; }
+#polarTable tbody tr:last-child td:last-child{ border-bottom-right-radius: 12px; }
+
+/* Valores “vacíos” con guion: atenúa un poco */
+#polarTable td{
+  transition: background .15s ease, color .15s ease;
+}
+#polarTable td:empty,
+#polarTable td:where(:not(:first-child)):has(:is(span[data-missing], .missing)){
+  color: var(--muted);
+}
+
+/* Scrollbar (WebKit) */
+#tableWrapper::-webkit-scrollbar{ height: 10px; width: 10px; }
+#tableWrapper::-webkit-scrollbar-track{ background: transparent; }
+#tableWrapper::-webkit-scrollbar-thumb{
+  background: var(--border);
+  border-radius: 10px;
+}
+#tableWrapper::-webkit-scrollbar-thumb:hover{ background: var(--muted); }
+
+/* Responsive: reduce tipografía en pantallas estrechas */
+@media (max-width: 768px){
+  #polarTable{ font-size: 12.5px; }
+  #polarTable th, #polarTable td{ padding: 8px 10px; }
+}

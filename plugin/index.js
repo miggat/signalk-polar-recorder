@@ -238,7 +238,8 @@ module.exports = function (app) {
                 twa: state.liveTWA,
                 tws: state.liveTWS,
                 stw: state.liveSTW
-              }
+              },
+              { event: 'setMode', mode: state.recordingMode, filePath: state.filePath }
               //,
               // { event: 'polarUpdated', filePath: state.filePath }
             ];
@@ -377,7 +378,7 @@ module.exports = function (app) {
 
         if (!validData) {
           app.debug(`Invalid data due to: ${reasons.join(', ')}`);
-          state.notifyClients({ event: 'unableToRecord', errors: reasons });
+          state.notifyClients({ event: 'recordErrors', errors: reasons });
           return;
         }
 
@@ -390,7 +391,7 @@ module.exports = function (app) {
           state.liveTWS = tws ? tws * 1.94384 : undefined;
           state.liveSTW = stw ? stw * 1.94384 : undefined;
 
-          state.notifyClients({ event: 'unableToRecord', errors: null });
+          state.notifyClients({ event: 'recordErrors', errors: null });
           state.notifyClients({ event: 'updateLivePerformance', twa: state.liveTWA, tws: state.liveTWS, stw: state.liveSTW });
 
           app.debug(`Recording active: ${state.recordingActive} - Mode: ${state.recordingMode}`);
