@@ -1,0 +1,18 @@
+#autoRecording .red-dot{
+  width: 10px; height: 10px;
+  border-radius: 999px;
+  background: var(--danger);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 0%);
+  animation: ping 1.8s infinite;
+}
+@keyframes ping{
+  0%{ box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 0%); }
+  70%{ box-shadow: 0 0 0 10px color-mix(in oklab, var(--danger), transparent 85%); }
+  100%{ box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 100%); }
+}
+
+#autoRecording #autoRecordText{
+  font: 700 13px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing: .2px;
+  color: var(--text);
+}

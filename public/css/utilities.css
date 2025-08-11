@@ -1,0 +1,6 @@
+.muted{ color: var(--muted); }
+.badge-ok{ color: var(--ok); }
+.badge-warn{ color: var(--warn); }
+.badge-danger{ color: var(--danger); }
+
+#errorOverlay{ display: none; z-index: 10000; }

@@ -284,6 +284,8 @@ function findClosestPolarPoint(twa, tws, polarData) {
 // }
 
 function updateLivePerformance(twa, tws, stw) {
+
+    console.log('updateLivePerformance')
     updateLivePoint(twa, stw);
 
     if (twa != undefined && tws != undefined && stw != undefined) {
@@ -296,7 +298,7 @@ function updateLivePerformance(twa, tws, stw) {
             const delta = (stw - expectedBoatSpeed).toFixed(2);
             const deltaPct = expectedBoatSpeed > 0 ? ((delta / expectedBoatSpeed) * 100).toFixed(1) : "--";
 
-            document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA`;
+            document.getElementById("closestPolar").textContent = `Closest Polar: ${closestTWS} kt TWS / ${closestTWA}° TWA (${expectedBoatSpeed.toFixed(1)} kt STW)`;
             document.getElementById("speedDifference").textContent = `Difference: ${delta} kt (${deltaPct}%)`;
         } else {
             document.getElementById("closestPolar").textContent = `Closest Polar: -- kt TWS / --° TWA`;

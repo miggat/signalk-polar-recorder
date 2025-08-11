@@ -1,0 +1,116 @@
+/* Tarjetas genéricas */
+.control-card,
+body.mode-auto #optionsCard,
+body.mode-auto #liveData,
+body.mode-auto #errors{
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* Botonera card */
+#optionsCard{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Botones base */
+.btn{
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+  font: 600 13px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease,
+              border-color .2s ease, box-shadow .2s ease;
+}
+.btn:hover{
+  background: var(--hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 80%);
+}
+.btn:active{ transform: translateY(1px); }
+.btn-primary{ border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 40%) inset; }
+.btn-ghost{ background: transparent; }
+
+/* Aplica a tus botones existentes (fallback a falta de CSS Modules) */
+#toggleFullChartBtn,
+#showTableBtn{
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+  font: 600 13px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease,
+              border-color .2s ease, box-shadow .2s ease;
+  margin-top: 0;
+}
+#toggleFullChartBtn:hover,
+#showTableBtn:hover{
+  background: var(--hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 80%);
+}
+
+/* Live data */
+#liveData{
+  display: grid;
+  gap: 8px;
+  font: 500 13.5px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color: var(--text);
+}
+#liveData span{ font-variant-numeric: tabular-nums; }
+#liveData .badge{
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Tabla embebida y overlay */
+#tableWrapper{
+  display: none;
+  margin-top: 10px;
+  overflow: auto;
+  max-height: 100vh;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+#toggleTableContainer.expanded{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+#toggleTableContainer.expanded #tableWrapper{
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+#toggleTableContainer.expanded #showTableBtn{
+  align-self: flex-start;
+  margin-bottom: 10px;
+}

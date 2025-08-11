@@ -1,0 +1,29 @@
+body.mode-auto #sidebar,
+body.mode-auto #autoRecording{
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  color: var(--text);
+
+  border-right: 1px solid var(--border);
+  box-shadow: inset -1px 0 0 var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-2), transparent 25%),
+    var(--surface)
+  );
+  backdrop-filter: blur(6px);
+}
+
+/* Scrollbar del panel */
+#autoRecording::-webkit-scrollbar{ width: 10px; }
+#autoRecording::-webkit-scrollbar-track{ background: transparent; }
+#autoRecording::-webkit-scrollbar-thumb{
+  background: var(--border);
+  border-radius: 10px;
+}
+#autoRecording::-webkit-scrollbar-thumb:hover{ background: var(--muted); }

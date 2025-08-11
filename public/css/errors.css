@@ -1,0 +1,44 @@
+/* Caja */
+body.mode-auto #errors{
+  border-left: 4px solid var(--danger);
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--danger), transparent 92%),
+      color-mix(in oklab, var(--danger), transparent 96%)
+    ),
+    linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  animation: errorPulse 1.8s infinite;
+}
+
+/* Pulso */
+@keyframes errorPulse{
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 0%); }
+  70%  { box-shadow: 0 0 0 8px color-mix(in oklab, var(--danger), transparent 85%); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 100%); }
+}
+
+/* Lista */
+body.mode-auto #errors ul{
+  margin: 0;
+  padding-left: 1.2em;
+  font: 500 13.5px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--danger);
+  text-transform: capitalize;
+  list-style: none;
+}
+body.mode-auto #errors li{
+  position: relative;
+  margin: 4px 0;
+  padding-left: 20px;
+}
+body.mode-auto #errors li::before{
+  content: "⚠";
+  position: absolute;
+  left: 0; top: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--danger);
+}

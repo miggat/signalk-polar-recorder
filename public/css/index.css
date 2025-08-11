@@ -1,196 +1,334 @@
-:root {
-    --sidebar-w: 350px;
+/* ====== Variables (reutiliza las de table.css si ya las tienes) ====== */
+:root{
+  --sidebar-w: 350px;
+
+  /* paleta compartida con table.css */
+  --bg: #0b0d10;
+  --surface: #12161b;
+  --surface-2: #171c22;
+  --text: #e6e9ef;
+  --muted: #aab1bc;
+  --border: #243042;
+  --hover: #1b2430;
+  --accent: #4ea1ff;
+  --ok: #27ae60;
+  --warn: #f39c12;
+  --danger: #e74c3c;
+  --shadow: 0 6px 18px rgba(0,0,0,.35);
 }
 
-/* Layout general modo AUTO: SIN SCROLL global */
-body.mode-auto {
-    margin: 0;
-    height: 100vh;
-    /* Toda la pantalla */
-    overflow: hidden;
-    /* Sin scroll del documento */
-    display: grid;
-    grid-template-columns: var(--sidebar-w) 1fr;
-    grid-template-rows: 100vh;
-    grid-template-areas: "sidebar main";
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9;
+    --surface:#ffffff;
+    --surface-2:#f4f6f8;
+    --text:#1e2329;
+    --muted:#66707b;
+    --border:#e2e6ea;
+    --hover:#eef2f6;
+    --accent:#2f6fff;
+    --ok:#1e9752;
+    --warn:#c87f0a;
+    --danger:#d94b4b;
+    --shadow: 0 6px 18px rgba(0,0,0,.08);
+  }
 }
 
+/* ====== Layout general modo AUTO ====== */
+body.mode-auto{
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: 100vh;
+  grid-template-areas: "sidebar main";
+  background: var(--bg);
+}
 
-/* Sidebar (barra de opciones) */
+/* Sidebar (usa #autoRecording como panel lateral) */
 body.mode-auto #sidebar,
-body.mode-auto #autoRecording {
-    grid-area: sidebar;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 16px;
-    box-sizing: border-box;
-    border-right: 1px solid #333;
-    /* separador vertical en pantallas grandes */
-    overflow-y: auto;
-    /* scroll SOLO en la barra si hace falta */
-    background-color: rgba(240, 234, 250, 0.85);
-    backdrop-filter: blur(2px);
+body.mode-auto #autoRecording{
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--surface-2), transparent 25%), var(--surface))
+    ;
+  backdrop-filter: blur(6px);
+  color: var(--text);
+  box-shadow: inset -1px 0 0 var(--border);
 }
 
 /* Contenido principal: el gráfico polar */
-body.mode-auto #container {
-    grid-area: main;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    /* importante para que el gráfico se ajuste sin overflow */
+body.mode-auto #container{
+  grid-area: main;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  background: var(--bg);
 }
 
-/* Móvil / <=1200px: la barra va ARRIBA y el gráfico debajo */
-@media (max-width: 1200px) {
-    body.mode-auto {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        grid-template-areas:
-            "sidebar"
-            "main";
-    }
-
-    body.mode-auto #sidebar,
-    body.mode-auto #autoRecording {
-        border-right: none;
-        border-bottom: 1px solid #333;
-        /* separador horizontal en móviles */
-    }
+/* ====== Responsive: barra arriba en móvil ====== */
+@media (max-width: 1200px){
+  body.mode-auto{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "sidebar"
+      "main";
+  }
+  body.mode-auto #sidebar,
+  body.mode-auto #autoRecording{
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    box-shadow: inset 0 -1px 0 var(--border);
+  }
 }
 
-/* Detalles visuales mínimos para lo que ya tienes */
-#autoRecording .red-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: #e74c3c;
-    box-shadow: 0 0 8px rgba(231, 76, 60, .8);
+/* ====== Indicador recording ====== */
+#autoRecording .red-dot{
+  width: 10px; height: 10px;
+  border-radius: 999px;
+  background: var(--danger);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 0%);
+  animation: ping 1.8s infinite;
+}
+@keyframes ping{
+  0%{ box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 0%); }
+  70%{ box-shadow: 0 0 0 10px color-mix(in oklab, var(--danger), transparent 85%); }
+  100%{ box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 100%); }
 }
 
-#autoRecording #autoRecordText {
-    font-weight: 600;
-    line-height: 1.4;
+#autoRecording #autoRecordText{
+  font: 700 13px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing: .2px;
+  color: var(--text);
 }
 
-/* ---- Tarjetas dentro de la barra ---- */
+/* ====== Tarjetas genéricas del sidebar ====== */
+.control-card,
 body.mode-auto #optionsCard,
 body.mode-auto #liveData,
+body.mode-auto #errors{
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* Caja de errores */
 body.mode-auto #errors {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(2px);
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+  border-left: 4px solid var(--danger);
+  background: color-mix(in oklab, var(--danger), transparent 92%);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  animation: errorPulse 1.8s infinite;
 }
 
-body.mode-auto #errors {
-    color: red;
+/* Animación suave de pulso */
+@keyframes errorPulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 0%); }
+  70%  { box-shadow: 0 0 0 8px color-mix(in oklab, var(--danger), transparent 85%); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger), transparent 100%); }
 }
 
-body.mode-auto #errors ul{
-    padding-inline: 1em;
-    margin-block-start: 0%;
-    margin-block-end: 0%;
-    text-transform: capitalize;
+/* Lista interna */
+body.mode-auto #errors ul {
+  margin: 0;
+  padding-left: 1.2em;
+  font: 500 13.5px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--danger);
+  text-transform: capitalize;
+  list-style: none;
 }
 
-/* Botonera y layout del card */
-body.mode-auto #chartTableControls {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    justify-content: flex-start;
-    align-items: center;
+body.mode-auto #errors li {
+  position: relative;
+  margin: 4px 0;
+  padding-left: 20px;
 }
 
-/* Botones en línea si quieres que queden juntos */
-body.mode-auto #toggleFullChartBtn,
-body.mode-auto #showTableBtn,
-body.mode-auto #hideTableBtn {
-    display: inline-block;
-    margin-top: 0;
-    /* ya usamos gap en el card */
-}
-
-body.mode-auto #toggleTableContainer {
-    /* contenedor simple dentro del card */
-    margin-top: 0px;
-    /* separa del botón Half polar */
-}
-
-/* Botones dentro de la barra */
-body.mode-auto #showTableBtn,
-body.mode-auto #toggleFullChartBtn {
-    display: inline-block;
-    margin-top: 6px;
-    padding: 8px 12px;
-    font-size: .95rem;
-    cursor: pointer;
-    border-radius: 6px;
-    border: 1px solid #444;
-    background: #f6f6f6;
-}
-
-/* Tabla oculta por defecto dentro de la tarjeta */
-body.mode-auto #tableWrapper {
-    display: none;
-    margin-top: 10px;
-    overflow: auto;
-    max-height: 100vh;
-    /* por si decides mostrarla embebida sin overlay */
-}
-
-/* Contenedor del botón de 180º/360º como tarjeta simple */
-body.mode-auto #chartControls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-/* ---- Modo EXPANDIDO: overlay a pantalla completa para la tabla ---- */
-body.mode-auto #toggleTableContainer.expanded {
-    position: fixed;
-    inset: 0;
-    /* top:0; right:0; bottom:0; left:0 */
-    z-index: 9999;
-    margin: 0;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-    background: #fff;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-}
-
-body.mode-auto #toggleTableContainer.expanded #tableWrapper {
-    display: block;
-    flex: 1;
-    /* que la tabla ocupe todo lo posible */
-    min-height: 0;
-    overflow: auto;
-}
-
-/* Botón dentro del overlay */
-body.mode-auto #toggleTableContainer.expanded #showTableBtn {
-    align-self: flex-start;
-    margin-bottom: 10px;
-}
-
-/* ---- Ocultar lo que no toca en modo AUTO (pero NO ocultes los controles) ---- */
-body.mode-auto #manualRecording,
-body.mode-auto #motoringOverlay {
-    display: none !important;
+/* Icono de advertencia */
+body.mode-auto #errors li::before {
+  content: "⚠";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--danger);
 }
 
 
 
-
-#errorOverlay {
-    display: none;
-    z-index: 10000;
+/* ====== Live data ====== */
+#liveData{
+  display: grid;
+  gap: 8px;
+  font: 500 13.5px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color: var(--text);
 }
+#liveData span{
+  font-variant-numeric: tabular-nums;
+}
+#liveData .badge{
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ====== Botones ====== */
+.btn{
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+  font: 600 13px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.btn:hover{
+  background: var(--hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 80%);
+}
+.btn:active{ transform: translateY(1px); }
+
+.btn-primary{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 40%) inset;
+}
+.btn-ghost{
+  background: transparent;
+}
+
+/* Aplica estilos a tus botones existentes */
+#toggleFullChartBtn,
+#showTableBtn{
+  composes: btn;                /* si tu bundler soporta composes */
+}
+#toggleFullChartBtn,
+#showTableBtn{
+  /* fallback si no usas composes */
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  color: var(--text);
+  font: 600 13px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  margin-top: 0;
+}
+#toggleFullChartBtn:hover,
+#showTableBtn:hover{
+  background: var(--hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 80%);
+}
+
+/* Botonera dentro del card */
+#optionsCard{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* ====== Errores (alert) ====== */
+#errors{
+  border-left: 4px solid var(--danger);
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--danger), transparent 92%),
+      color-mix(in oklab, var(--danger), transparent 96%)
+    ),
+    linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+#errors ul{
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--text);
+}
+#errors li{
+  margin: 4px 0;
+  line-height: 1.3;
+}
+#errors .chip{
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--danger), transparent 85%);
+  border: 1px solid color-mix(in oklab, var(--danger), var(--border) 80%);
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* ====== Contenedor de tabla embebida (cuando no es overlay) ====== */
+#tableWrapper{
+  display: none;
+  margin-top: 10px;
+  overflow: auto;
+  max-height: 100vh;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ====== Overlay a pantalla completa para la tabla ====== */
+#toggleTableContainer.expanded{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+#toggleTableContainer.expanded #tableWrapper{
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+#toggleTableContainer.expanded #showTableBtn{
+  align-self: flex-start;
+  margin-bottom: 10px;
+}
+
+/* ====== Utilidades ====== */
+.muted{ color: var(--muted); }
+.badge-ok{ color: var(--ok); }
+.badge-warn{ color: var(--warn); }
+.badge-danger{ color: var(--danger); }
+
+/* Scrollbar del panel */
+#autoRecording::-webkit-scrollbar{ width: 10px; }
+#autoRecording::-webkit-scrollbar-track{ background: transparent; }
+#autoRecording::-webkit-scrollbar-thumb{
+  background: var(--border);
+  border-radius: 10px;
+}
+#autoRecording::-webkit-scrollbar-thumb:hover{ background: var(--muted); }
+
+/* Z-index de overlays propios */
+#errorOverlay{ display: none; z-index: 10000; }
