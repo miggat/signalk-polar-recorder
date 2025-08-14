@@ -42,7 +42,7 @@ body #errors{
 .btn-ghost{ background: transparent; }
 
 /* Aplica a tus botones existentes (fallback a falta de CSS Modules) */
-#toggleFullChartBtn,
+.toggleFullChartBtn,
 #showTableBtn,
 #exportPolarBtn,
 #importPolarBtn,
@@ -61,7 +61,7 @@ body #errors{
               border-color .2s ease, box-shadow .2s ease;
   margin-top: 0;
 }
-#toggleFullChartBtn:hover,
+.toggleFullChartBtn:hover,
 #showTableBtn:hover,
 #exportPolarBtn:hover,
 #importPolarBtn:hover,

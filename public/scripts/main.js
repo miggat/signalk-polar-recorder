@@ -296,8 +296,25 @@ function updateTimestamp(payload) {
 
 // ===== Helpers locales =====
 function setText(id, txt) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = txt;
+    const CONTAINERS = ['manualRecording', 'autoRecording'];
+
+    const getEls = (id) => {
+        const seen = new Set();
+        const out = [];
+        const add = el => { if (el && !seen.has(el)) { seen.add(el); out.push(el); } };
+
+        // 1) elemento global (si existe)
+        add(document.getElementById(id));
+
+        // 2) elementos dentro de los contenedores
+        CONTAINERS.forEach(rootId => {
+            const root = document.getElementById(rootId);
+            if (root) root.querySelectorAll(`[id="${id}"]`).forEach(add);
+        });
+        return out;
+    };
+
+    getEls(id).forEach(el => { el.textContent = txt; });
 }
 
 function formatAbs(dt) {
@@ -396,20 +413,47 @@ function findClosestPolarPoint(twa, tws, polarData) {
 function updateLivePerformance(twa, tws, stw) {
     updateLivePoint(twa, stw);
 
-    const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    // --- helpers para múltiples contenedores con ids duplicados ---
+    const CONTAINERS = ['manualRecording', 'autoRecording'];
+
+    const getEls = (id) => {
+        const seen = new Set();
+        const out = [];
+        const add = el => { if (el && !seen.has(el)) { seen.add(el); out.push(el); } };
+
+        // 1) elemento global (si existe)
+        add(document.getElementById(id));
+
+        // 2) elementos dentro de los contenedores
+        CONTAINERS.forEach(rootId => {
+            const root = document.getElementById(rootId);
+            if (root) root.querySelectorAll(`[id="${id}"]`).forEach(add);
+        });
+        return out;
+    };
+
+    const setText = (id, txt) => {
+        getEls(id).forEach(el => { el.textContent = txt; });
+    };
+
+    const toneBadge = (idOrEls, tone) => {
+        const els = Array.isArray(idOrEls) ? idOrEls : getEls(idOrEls);
+        els.forEach(el => {
+            el.classList.remove('badge-ok', 'badge-warn', 'badge-danger');
+            el.classList.add('badge');
+            if (tone) el.classList.add(tone);
+        });
+    };
+
     const has = v => v !== undefined && v !== null && Number.isFinite(v);
     const fmtSigned = (v, d = 1) => (!has(v) ? '--' : ((v > 0 ? '+' : '') + v.toFixed(d)));
 
-    const toneBadge = (el, tone) => {
-        if (!el) return;
-        el.classList.remove('badge-ok', 'badge-warn', 'badge-danger');
-        el.classList.add('badge');
-        if (tone) el.classList.add(tone);
-    };
-
     if (!(has(twa) && has(tws) && has(stw))) {
-        ['now-twa', 'now-tws', 'now-stw', 'polar-twa', 'polar-tws', 'polar-stw'].forEach(id => setText(id, '--'));
-        setText('delta-abs', '-- kt'); setText('delta-pct', '(--%)'); setText('delta-trend', '–');
+        ['now-twa', 'now-tws', 'now-stw', 'polar-twa', 'polar-tws', 'polar-stw']
+            .forEach(id => setText(id, '--'));
+        setText('delta-abs', '-- kt');
+        setText('delta-pct', '(--%)');
+        setText('delta-trend', '–');
         return;
     }
 
@@ -436,17 +480,23 @@ function updateLivePerformance(twa, tws, stw) {
         setText('delta-abs', `${fmtSigned(delta, 1)} kt`);
         setText('delta-pct', `(${fmtSigned(deltaPct, 1)}%)`);
 
-        const trendEl = document.getElementById('delta-trend');
-        if (trendEl) trendEl.textContent = (delta > 0.05) ? '▲' : (delta < -0.05) ? '▼' : '–';
+        const trend = (delta > 0.05) ? '▲' : (delta < -0.05) ? '▼' : '–';
+        getEls('delta-trend').forEach(el => { el.textContent = trend; });
 
-        const tone = (delta == null) ? null : (delta > 0.05 ? 'badge-ok' : (delta < -0.05 ? 'badge-danger' : 'badge-warn'));
-        toneBadge(document.getElementById('delta-abs'), tone);
-        toneBadge(document.getElementById('delta-pct'), tone);
+        const tone = (delta == null) ? null
+            : (delta > 0.05 ? 'badge-ok' : (delta < -0.05 ? 'badge-danger' : 'badge-warn'));
+        toneBadge('delta-abs', tone);
+        toneBadge('delta-pct', tone);
     } else {
-        setText('polar-twa', '--'); setText('polar-tws', '--'); setText('polar-stw', '--');
-        setText('delta-abs', '-- kt'); setText('delta-pct', '(--%)'); setText('delta-trend', '–');
+        setText('polar-twa', '--');
+        setText('polar-tws', '--');
+        setText('polar-stw', '--');
+        setText('delta-abs', '-- kt');
+        setText('delta-pct', '(--%)');
+        setText('delta-trend', '–');
     }
 }
+
 
 
 async function fetchMotoringStatus() {
@@ -668,7 +718,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById('importPolarBtn')?.addEventListener('click', triggerFileImport);
 
-    const toggleFullChartBtn = document.getElementById("toggleFullChartBtn");
+    const toggleFullChartBtn = document.getElementById("toggleFullChartBtnAuto");
+    if(!toggleFullChartBtn)
+        toggleFullChartBtn = document.getElementById("toggleFullChartBtnManual");
 
     toggleFullChartBtn.addEventListener("click", () => {
 

@@ -109,9 +109,13 @@ The plugin writes polar data to JSON files, either automatically (`auto-recordin
 
 # Changelog
 
-## [1.1.0] - 2025-08-11
+## [1.1.1] - 2025-08-14
 
-# Changelog
+### Fixed
+
+- Fix several UI updates on automatic recording
+
+## [1.1.0] - 2025-08-11
 
 ### Changed
 
