@@ -718,22 +718,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById('importPolarBtn')?.addEventListener('click', triggerFileImport);
 
-    const toggleFullChartBtn = document.getElementById("toggleFullChartBtnAuto");
-    if(!toggleFullChartBtn)
-        toggleFullChartBtn = document.getElementById("toggleFullChartBtnManual");
 
-    toggleFullChartBtn.addEventListener("click", () => {
+    document.querySelectorAll('.toggleFullChartBtn')
+        .forEach(btn => btn.addEventListener('click', () => {
+            showFullChart = !showFullChart;
+            if (showFullChart) {
+                btn.textContent = "Half polar";
+            } else {
+                btn.textContent = "Mirror polar";
+            }
 
-        showFullChart = !showFullChart;
-        if (showFullChart) {
-            toggleFullChartBtn.textContent = "Half polar";
-        } else {
-            toggleFullChartBtn.textContent = "Mirror polar";
-        }
+            initChart(showFullChart);
+            fetchPolarData(selectedPolarFile);
+        }));
 
-        initChart(showFullChart);
-        fetchPolarData(selectedPolarFile);
-    });
+
+
+    // const toggleFullChartBtnAuto = document.getElementById("toggleFullChartBtnAuto");
+    // const toggleFullChartBtnManual = document.getElementById("toggleFullChartBtnManual");
+    // if (!toggleFullChartBtnManual)
+    //     console.log('Cannot find button toggleFullChartBtnManual');
+    // else
+    //     console.log('BUTTON FOUND');
+
+    // toggleFullChartBtnAuto.addEventListener("click", () => {
+
+    //     showFullChart = !showFullChart;
+    //     if (showFullChart) {
+    //         toggleFullChartBtnAuto.textContent = "Half polar";
+    //     } else {
+    //         toggleFullChartBtnAuto.textContent = "Mirror polar";
+    //     }
+
+    //     initChart(showFullChart);
+    //     fetchPolarData(selectedPolarFile);
+    // });
+
+    // toggleFullChartBtnManual.addEventListener("click", () => {
+
+    //     showFullChart = !showFullChart;
+    //     if (showFullChart) {
+    //         toggleFullChartBtnManual.textContent = "Half polar";
+    //     } else {
+    //         toggleFullChartBtnManual.textContent = "Mirror polar";
+    //     }
+
+    //     initChart(showFullChart);
+    //     fetchPolarData(selectedPolarFile);
+    // });
+
 
     document.getElementById('recordPolarBtn')?.addEventListener('click', () => {
         console.log(`Start recording in ${selectedPolarFile}`);

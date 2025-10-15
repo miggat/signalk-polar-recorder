@@ -348,6 +348,13 @@ module.exports = function (app) {
         state.notifyClients({ event: 'ping', recording: state.recordingActive, mode: state.recordingMode, file: state.polarDataFile });
 
         const readings = getReadings(app, options, sampleInterval, twaHistory, twsHistory, stwHistory, courseHistory, headingHistory, twdHistory);
+        /*
+          twa,
+          tws,
+          stw,
+          cog,
+          twd,
+        */
         const { twa, tws, stw, cog, twd } = readings;
 
         //*********** Filters
@@ -370,7 +377,7 @@ module.exports = function (app) {
         if (tws === undefined) reasons.push('tws undefined');
         if (stw === undefined) reasons.push('stw undefined');
         if (cog === undefined) reasons.push('cog undefined');
-        if (twd === undefined) reasons.push('twd undefined');
+        //if (twd === undefined) reasons.push('twd undefined');
         if (!stableCourse) reasons.push('unstable course');
         if (!stableHdg) reasons.push('unstable heading');
         if (!stableTwd) reasons.push('unstable TWD');

@@ -109,6 +109,12 @@ The plugin writes polar data to JSON files, either automatically (`auto-recordin
 
 # Changelog
 
+## [1.1.2] - 2025-08-15
+
+### Changed
+
+- Removed the requirement for TWD when not filtering by TWD
+
 ## [1.1.1] - 2025-08-14
 
 ### Fixed
